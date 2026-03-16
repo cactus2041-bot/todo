@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>待办清单</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#f5f6fa;color:#2d3436;height:100vh;overflow:hidden}
+.app{display:flex;height:100vh}
+.sidebar{width:220px;background:linear-gradient(180deg,#2d3436,#1e272e);color:#dfe6e9;display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-header{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sidebar-header h1{font-size:20px;color:#fff;display:flex;align-items:center;gap:8px}
+.sidebar-header .date{font-size:12px;color:#b2bec3;margin-top:6px}
+.sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .15s;margin-bottom:2px;color:#b2bec3}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.active{background:rgba(108,92,231,.3);color:#a29bfe;font-weight:600}
+.nav-item .icon{font-size:16px;width:22px;text-align:center}
+.nav-item .count{margin-left:auto;background:rgba(255,255,255,.1);padding:1px 8px;border-radius:10px;font-size:11px}
+.sidebar-footer{padding:14px;border-top:1px solid rgba(255,255,255,.08)}
+.sidebar-footer .stats{font-size:11px;color:#636e72;line-height:1.8}
+.sidebar-footer .stats span{color:#a29bfe;font-weight:600}
+.sidebar-btns{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.sidebar-btn{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:6px;font-size:12px;cursor:pointer;border:none;background:rgba(255,255,255,.06);color:#b2bec3;transition:all .15s}
+.sidebar-btn:hover{background:rgba(255,255,255,.12);color:#fff}
+#importFile{display:none}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.main-header{padding:20px 30px 16px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between}
+.main-title{font-size:18px;font-weight:700;color:#2d3436}
+.main-actions{display:flex;gap:8px}
+.btn-add{display:flex;align-items:center;gap:6px;padding:8px 18px;background:#6c5ce7;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer}
+.btn-add:hover{background:#5f3dc4}
+.btn-secondary{padding:8px 14px;background:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;font-size:13px;cursor:pointer;color:#636e72}
+.btn-secondary:hover{background:#e9ecef}
+.main-body{flex:1;overflow-y:auto;padding:20px 30px 30px}
+.section{background:#fff;border-radius:12px;margin-bottom:16px;border:1px solid #f0f0f0;overflow:hidden}
+.section:hover{box-shadow:0 2px 12px rgba(0,0,0,.04)}
+.section.drag-over{border-color:#6c5ce7;box-shadow:0 0 0 2px rgba(108,92,231,.15)}
+.section-header{padding:14px 20px;display:flex;align-items:center;gap:10px;background:#fafbfc;border-bottom:1px solid #f0f0f0;cursor:pointer}
+.section-icon{font-size:16px}
+.section-title{font-size:14px;font-weight:600;flex:1;color:#2d3436}
+.section-count{font-size:11px;background:#f0f0f0;padding:2px 10px;border-radius:10px;color:#636e72}
+.section-toggle{font-size:12px;color:#b2bec3;transition:transform .2s}
+.section-toggle.collapsed{transform:rotate(-90deg)}
+.section-body{padding:4px 12px}
+.section-body.collapsed{display:none}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;padding:28px;width:480px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal h3{font-size:18px;margin-bottom:18px;color:#2d3436}
+.modal label{display:block;font-size:12px;color:#636e72;margin:10px 0 4px}
+.modal input,.modal select{width:100%;padding:9px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;outline:none}
+.modal input:focus,.modal select:focus{border-color:#6c5ce7}
+.dashboard{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+.dash-card{background:#fff;border-radius:12px;padding:20px 16px;border:1px solid #f0f0f0;text-align:center;transition:box-shadow .15s}
+.dash-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.06)}
+.dash-card .dash-icon{font-size:24px;margin-bottom:6px}
+.dash-card .dash-num{font-size:32px;font-weight:700;line-height:1.2}
+.dash-card .dash-lbl{font-size:12px;color:#636e72;margin-top:4px}
+.dash-card .dash-sub{font-size:11px;color:#b2bec3;margin-top:2px}
+.dash-bar{background:#fff;border-radius:12px;padding:20px;border:1px solid #f0f0f0;margin-bottom:16px}
+.dash-bar h4{font-size:14px;font-weight:600;margin-bottom:12px;color:#2d3436}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px}
+.bar-row .bar-label{width:100px;color:#636e72;text-align:right;flex-shrink:0}
+.bar-row .bar-track{flex:1;height:20px;background:#f0f0f0;border-radius:10px;overflow:hidden;position:relative}
+.bar-row .bar-fill{height:100%;border-radius:10px;transition:width .3s}
+.bar-row .bar-val{width:40px;font-weight:600;color:#2d3436}
+
+</style>
+</head>
+<body>
+<div class="app">
+<div class="sidebar">
+<div class="sidebar-header"><h1>📋 待办清单</h1><div class="date" id="currentDate"></div></div>
+<div class="sidebar-nav" id="sidebarNav"></div>
+<div class="sidebar-footer">
+<div class="stats" id="statsArea"></div>
+<div class="sidebar-btns">
+<button class="sidebar-btn" onclick="exportExcel()">💾 导出Excel</button>
+<button class="sidebar-btn" onclick="document.getElementById('importFile').click()">📂 导入数据</button>
+<button class="sidebar-btn" onclick="resetData()">🔄 重置默认</button>
+<button class="sidebar-btn" id="notifyBtn" onclick="requestNotify()">🔔 开启提醒</button>
+<input type="file" id="importFile" accept=".json" onchange="importData(event)">
+</div></div></div>
+<div class="main">
+<div class="main-header">
+<div class="main-title" id="mainTitle">全部待办</div>
+<div class="main-actions">
+<button class="btn-secondary" onclick="exportExcel()">📊 导出Excel</button>
+<button class="btn-add" onclick="showModal()">＋ 新建待办</button>
+</div></div>
+<div class="main-body" id="mainBody"></div>
+</div></div>
+
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)hideModal()">
+<div class="modal" onclick="event.stopPropagation()">
+<h3 id="modalTitle">新建待办</h3>
+<label>待办内容</label><input type="text" id="inputTitle" placeholder="输入待办内容">
+<label>分类</label><select id="inputSection"></select>
+<div id="channelRow" style="display:none"><label>渠道</label><select id="inputChannel"></select></div>
+<div style="display:flex;gap:12px"><div style="flex:1"><label>优先级</label><select id="inputPriority"><option value="normal">普通</option><option value="urgent">紧急</option><option value="pending">待确认</option></select></div>
+<div style="flex:1"><label>到期日</label><input type="date" id="inputDue"></div></div>
+<div style="display:flex;gap:12px"><div style="flex:1"><label>标签</label><input type="text" id="inputTag" placeholder="标签"></div>
+<div style="flex:1"><label>内部跟进人</label><input type="text" id="inputAssignee" placeholder="跟进人"></div></div>
+<label>最新进展</label><input type="text" id="inputProgress" placeholder="记录最新进展">
+<label>关联邮件</label><input type="text" id="inputEmail" placeholder="邮件文件名">
+<label>发件日期</label><input type="text" id="inputEmailDate" placeholder="如 2026-03">
+<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+<button onclick="hideModal()" style="padding:9px 22px;border-radius:8px;font-size:13px;cursor:pointer;border:none;background:#f0f2f5;color:#636e72">取消</button>
+<button id="modalConfirm" onclick="saveTodo()" style="padding:9px 22px;border-radius:8px;font-size:13px;cursor:pointer;border:none;background:#6c5ce7;color:#fff">添加</button>
+</div></div></div>
+
+<script>
+var SK='todo_v3',editingItem=null,activeTab='all',dragSi=null,dragIi=null;
+var collapsedSections=new Set();
+var PL={urgent:'紧急',normal:'普通',pending:'待确认'};
+var TABS=[
+{id:'all',label:'全部待办',icon:'📋'},
+{id:'dashboard',label:'Dashboard',icon:'📊'},
+{id:'需求文档编写',label:'需求文档编写',icon:'📝'},
+{id:'渠道问题沟通',label:'渠道问题沟通',icon:'🏦'},
+{id:'内部问题处理',label:'内部问题处理',icon:'🔧'},
+{id:'上线跟进',label:'上线跟进',icon:'🚀'},
+{id:'其他事项',label:'其他事项',icon:'📌'}
+];
+var SECTIONS=['需求文档编写','渠道问题沟通','内部问题处理','上线跟进','其他事项'];
+var CHANNEL_DATA=[
+{group:'星展银行 DBS',items:['星展香港','星展印尼','星展新加坡']},
+{group:'渣打银行 SCB',items:['渣打香港','渣打阿联酋','渣打中国','渣打菲律宾','渣打新加坡','渣打泰国','渣打印尼','渣打审查']},
+{group:'摩根大通 JPM',items:['JPM 香港','JPM 美国','JPM 英国','JPM 中国','JPM 新加坡']},
+{group:'德银 DB',items:['德银香港','德银美国','德银新加坡','德银中国','德银审查','德银越南','德银泰国','德银证书更新']},
+{group:'花旗银行 CITI',items:['花旗上海','花旗香港','花旗澳洲','花旗欧洲','花旗英国/伦敦','花旗波兰','花旗法国','花旗美国','花旗新加坡','花旗墨西哥','花旗加拿大','花旗印尼','花旗泰国','花旗马来西亚','花旗菲律宾','花旗日本','花旗爱尔兰','花旗罗马尼亚','花旗巴西','花旗北美','花旗EMEA地区','Worldlink','花旗审查']},
+{group:'Banking Circle',items:['BC Payment']},
+{group:'GME',items:[]},{group:'Thunes',items:[]},{group:'Onafriq',items:[]},
+{group:'TRANSFERMATE',items:[]},{group:'IBC 芝加哥国际银行',items:[]},
+{group:'barclays 巴克莱',items:['Barclays Corporate bank(UK)','Barclays PLC(SG)']},
+{group:'opentransact',items:[]},{group:'MSB VIETNAM',items:[]},
+{group:'招行（杭州）',items:[]},{group:'招行（海口）',items:[]},{group:'平安（深圳）',items:[]},
+{group:'中行（广州）',items:[]},{group:'中行（深圳）',items:[]},{group:'中行（杭州）',items:[]},
+{group:'汇付天下',items:[]},{group:'KCB-NRA 金城银行',items:[]},{group:'江苏银行',items:[]},
+{group:'北京银行（上海）',items:[]},{group:'上海农商',items:[]},{group:'RD渠道',items:[]},
+{group:'易宝支付',items:[]},{group:'网商银行',items:[]},{group:'富邦银行',items:[]},
+{group:'QBC',items:[]},{group:'Visa direct',items:[]},{group:'Payso',items:[]},
+{group:'Neopay',items:[]},{group:'Hecto',items:[]},{group:'Klasha',items:[]},
+{group:'ICB',items:[]},{group:'UPI',items:[]},{group:'CFSB',items:[]},
+{group:'Alphapay',items:[]},{group:'K Bank',items:[]},{group:'澳门国际',items:[]},
+{group:'Currency Cloud',items:[]},{group:'工行高新',items:[]},{group:'Unionpay',items:[]},
+{group:'越南MSB',items:[]},{group:'Ouribank',items:[]},{group:'哈尔滨银行',items:[]},
+{group:'泰康资产',items:[]},{group:'南洋商业银行',items:[]},{group:'SKYPAY',items:[]},
+{group:'Facility Pay',items:[]},{group:'CIRCLE',items:[]},{group:'新加坡M-DAQ',items:[]},
+{group:'新西兰Latipay',items:[]},{group:'Triplink',items:[]},{group:'华夏银行',items:[]},
+{group:'BVNK',items:[]},{group:'浦发银行',items:[]},
+{group:'OCBC',items:['OCBC SG','OCBC HK']},
+{group:'建亚（建设银行亚洲）',items:[]},{group:'中信证券',items:[]},{group:'Localpayment',items:[]},
+{group:'Latipay',items:[]},{group:'合利宝',items:[]},{group:'Veem',items:[]},
+{group:'Checkbook',items:[]},{group:'MOOLAHGO',items:[]},{group:'PAYPAL',items:[]},
+{group:'平安资管',items:[]},{group:'Verto',items:[]}
+];
+var defaultData={sections:[
+{name:'需求文档编写',icon:'📝',color:'#e8f0fe',items:[
+{id:1,title:'BPN - Create Virtual Account 接口字段整理',done:true,priority:'normal',tag:'BPN',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''},
+{id:201,title:'【渠道拓展】上海农商行境内转汇接口对接（境内外币付款功能）&NRA的付款对接',done:false,priority:'normal',tag:'营运-GBP/B2B',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''},
+{id:202,title:'【老渠道拓展】花旗菲律宾XBTT对接',done:false,priority:'normal',tag:'营运-GBP/B2C',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''},
+{id:203,title:'【老渠道拓展】德银CAMT 052/053文件对接V8版本',done:false,priority:'normal',tag:'营运-结算',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''},
+{id:204,title:'【老渠道拓展】Citi Tokenization Services对接',done:false,priority:'normal',tag:'营运-GBP',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''},
+{id:205,title:'【渠道拓展】花旗API申卡',done:false,priority:'normal',tag:'营运-GBP/B2B',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''},
+{id:206,title:'【老渠道拓展】外籍人士申报需要上报申报人国家字段',done:false,priority:'normal',tag:'B2B',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''},
+{id:207,title:'【渠道拓展】Visa Direct 全球跨境分发第二期对接',done:false,priority:'normal',tag:'营运-GBP/B2B',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''},
+{id:208,title:'【渠道拓展】海口浦发-对接外汇申报单',done:false,priority:'normal',tag:'营运-结算',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''}
+]},
+{name:'渠道问题沟通',icon:'🏦',color:'#e3f2fd',items:[
+{id:2,title:'SSL证书更新回复',done:false,priority:'pending',tag:'OCBC',due:'',progress:'已回复，等待确认',assignee:'',email:'Email_to_OCBC_SSL_Certificate_Update.txt / Email_Reply_to_OCBC_SSL_Certificate.txt',emailDate:'2026-03 / 2026-03-16',channel:'OCBC'},
+{id:3,title:'SSL证书更新通知',done:false,priority:'normal',tag:'DBS',due:'',progress:'',assignee:'',email:'Email_to_DBS_SSL_Certificate_Update.txt',emailDate:'2026-03',channel:'星展香港'},
+{id:16,title:'Duplicate Entries of Corp Code and VA Number.[R003]',done:false,priority:'normal',tag:'DBS',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:'星展香港'},
+{id:4,title:'CAMT052对账文件解析确认',done:false,priority:'normal',tag:'SCB Indonesia',due:'',progress:'',assignee:'',email:'Email_to_SCB_Indonesia_CAMT052_Parsing.txt',emailDate:'2026-03',channel:'渣打印尼'},
+{id:14,title:'付款失败问题',done:false,priority:'urgent',tag:'渣打香港',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:'渣打香港'},
+{id:15,title:'3月份的升级问题',done:true,priority:'normal',tag:'渣打香港',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:'渣打香港'},
+{id:5,title:'结算问题',done:false,priority:'normal',tag:'FP',due:'',progress:'',assignee:'',email:'Email_to_FP_Statement_Download_Error.txt',emailDate:'2026-03',channel:'Facility Pay'},
+{id:6,title:'付款报错问题',done:false,priority:'normal',tag:'VD',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:'Visa direct'},
+{id:8,title:'主账户加款',done:true,priority:'normal',tag:'EUBC',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''},
+{id:9,title:'背后银行更换',done:false,priority:'normal',tag:'TM',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:'TRANSFERMATE'},
+{id:10,title:'咨询B2C申卡是否能添加字段',done:false,priority:'normal',tag:'GME',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:'GME'},
+{id:11,title:'咨询mandate事项',done:false,priority:'normal',tag:'BC',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:'Banking Circle'},
+{id:12,title:'对账单取值时间调整',done:true,priority:'normal',tag:'MoolahGo',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:'MOOLAHGO'},
+{id:13,title:'地址栏位问题',done:true,priority:'normal',tag:'MoolahGo',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:'MOOLAHGO'},
+{id:100,title:'接口限流问题跟进',done:false,priority:'urgent',tag:'MoolahGo',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:'MOOLAHGO'},
+{id:60,title:'Payout Query 404问题澄清',done:false,priority:'normal',tag:'Visa',due:'',progress:'',assignee:'',email:'Email_to_Visa_Payout_Query_404_Response.txt',emailDate:'2026-03',channel:'Visa direct'},
+{id:70,title:'接口字段需求确认',done:false,priority:'normal',tag:'TransferMate',due:'',progress:'',assignee:'',email:'Email_to_TransferMate_Integration_Questions.txt',emailDate:'2026-03',channel:'TRANSFERMATE'},
+{id:80,title:'技术支持请求跟进',done:false,priority:'normal',tag:'Verto',due:'',progress:'',assignee:'',email:'Email_to_Verto_Technical_Support_Request.txt',emailDate:'2026-03',channel:'Verto'},
+{id:90,title:'SFTP对接跟进',done:false,priority:'urgent',tag:'Veem',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:'Veem'},
+{id:200,title:'内部确认后回复易宝排期',done:false,priority:'normal',tag:'易宝',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:'易宝支付'}
+]},
+{name:'内部问题处理',icon:'🔧',color:'#fce4ec',items:[
+{id:110,title:'申卡人名字字段处理',done:false,priority:'normal',tag:'虚拟卡',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''}
+]},
+{name:'上线跟进',icon:'🚀',color:'#e0f7fa',items:[
+{id:301,title:'JPM Starlink 线上渠道信息配置',done:false,priority:'normal',tag:'JPM',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''},
+{id:302,title:'Velafi 线上渠道信息配置',done:false,priority:'normal',tag:'Velafi',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''},
+{id:303,title:'Circle 生产配置',done:false,priority:'normal',tag:'CIRCLE',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''}
+]},
+{name:'其他事项',icon:'📌',color:'#e8f5e9',items:[]}
+]};
+var data;
+try{data=JSON.parse(localStorage.getItem(SK));if(!data||!data.sections)throw 0;
+var nm=data.sections.some(function(s){return s.name.indexOf(' - ')>0&&s.name.startsWith('渠道问题沟通')});
+if(nm){var ns=[],ci=[];data.sections.forEach(function(s){if(s.name.startsWith('渠道问题沟通')){var cn=s.name.indexOf(' - ')>0?s.name.split(' - ')[1]:'';s.items.forEach(function(i){if(!i.channel)i.channel=cn;ci.push(i)})}else{s.items.forEach(function(i){if(!i.channel)i.channel=''});ns.push(s)}});
+var cs=ns.find(function(s){return s.name==='渠道问题沟通'});if(!cs){cs={name:'渠道问题沟通',icon:'🏦',color:'#e3f2fd',items:[]};ns.splice(1,0,cs)}cs.items=cs.items.concat(ci);data.sections=ns;
+SECTIONS.forEach(function(sn){if(!data.sections.find(function(s){return s.name===sn}))data.sections.push({name:sn,icon:'📌',color:'#e8f5e9',items:[]})});save()}
+data.sections.forEach(function(s){s.items.forEach(function(i){if(typeof i.channel==='undefined')i.channel=''})});
+}catch(e){data=JSON.parse(JSON.stringify(defaultData))}
+function save(){try{localStorage.setItem(SK,JSON.stringify(data))}catch(e){}}
+function getTabCategory(n){for(var i=0;i<SECTIONS.length;i++){if(n===SECTIONS[i])return SECTIONS[i]}return'其他事项'}
+function getFilteredSections(){if(activeTab==='all'||activeTab==='dashboard')return data.sections;return data.sections.filter(function(s){return getTabCategory(s.name)===activeTab})}
+function isOverdue(d){if(!d)return false;var t=new Date();t.setHours(0,0,0,0);return new Date(d)<t}
+function dueLabel(d){if(!d)return'';var v=new Date(d),t=new Date();t.setHours(0,0,0,0);var diff=Math.ceil((v-t)/86400000);if(diff<0)return'已过期'+(-diff)+'天';if(diff===0)return'今天到期';if(diff===1)return'明天到期';return diff+'天后到期'}
+
+function renderDashboard(){
+  var total=0,done=0,urgent=0,overdue=0,secStats={};
+  SECTIONS.forEach(function(sn){secStats[sn]={total:0,done:0}});
+  data.sections.forEach(function(s){var cat=getTabCategory(s.name);s.items.forEach(function(i){
+    total++;if(i.done)done++;if(i.priority==='urgent'&&!i.done)urgent++;if(!i.done&&isOverdue(i.due))overdue++;
+    if(secStats[cat]){secStats[cat].total++;if(i.done)secStats[cat].done++}
+  })});
+  var pending=total-done;
+  var colors=['#6c5ce7','#00b894','#e17055','#fdcb6e','#0984e3'];
+  var h='<div class="dashboard">';
+  h+='<div class="dash-card"><div class="dash-icon">📋</div><div class="dash-num" style="color:#6c5ce7">'+total+'</div><div class="dash-lbl">总待办</div></div>';
+  h+='<div class="dash-card"><div class="dash-icon">✅</div><div class="dash-num" style="color:#00b894">'+done+'</div><div class="dash-lbl">已完成</div><div class="dash-sub">'+(total?Math.round(done/total*100):0)+'%</div></div>';
+  h+='<div class="dash-card"><div class="dash-icon">⏳</div><div class="dash-num" style="color:#0984e3">'+pending+'</div><div class="dash-lbl">待处理</div></div>';
+  h+='<div class="dash-card"><div class="dash-icon">🔥</div><div class="dash-num" style="color:#e17055">'+urgent+'</div><div class="dash-lbl">紧急</div></div>';
+  h+='<div class="dash-card"><div class="dash-icon">⚠️</div><div class="dash-num" style="color:#d63031">'+(overdue)+'</div><div class="dash-lbl">已过期</div></div>';
+  h+='</div>';
+  // Bar chart per section
+  h+='<div class="dash-bar"><h4>各分类进度</h4>';
+  SECTIONS.forEach(function(sn,idx){
+    var st=secStats[sn],pct=st.total?Math.round(st.done/st.total*100):0;
+    h+='<div class="bar-row"><div class="bar-label">'+sn+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+colors[idx%5]+'"></div></div><div class="bar-val">'+st.done+'/'+st.total+'</div></div>';
+  });
+  h+='</div>';
+  // Channel breakdown for 渠道问题沟通
+  var chSec=data.sections.find(function(s){return s.name==='渠道问题沟通'});
+  if(chSec&&chSec.items.length){
+    var chStats={};chSec.items.forEach(function(i){var ch=i.channel||'未分配';if(!chStats[ch])chStats[ch]={total:0,done:0};chStats[ch].total++;if(i.done)chStats[ch].done++});
+    h+='<div class="dash-bar"><h4>渠道问题分布</h4>';
+    Object.keys(chStats).sort().forEach(function(ch){
+      var st=chStats[ch],pct=st.total?Math.round(st.done/st.total*100):0;
+      h+='<div class="bar-row"><div class="bar-label">'+ch+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:#6c5ce7"></div></div><div class="bar-val">'+st.done+'/'+st.total+'</div></div>';
+    });
+    h+='</div>';
+  }
+  return h;
+}
+function renderNav(){
+  var total=0,done=0,tc={};SECTIONS.forEach(function(s){tc[s]=0});tc['all']=0;tc['dashboard']=0;
+  data.sections.forEach(function(s){var cat=getTabCategory(s.name);s.items.forEach(function(i){total++;if(i.done)done++;tc[cat]=(tc[cat]||0)+1})});
+  tc['all']=total;tc['dashboard']=total;
+  document.getElementById('sidebarNav').innerHTML=TABS.map(function(t){
+    var cnt=tc[t.id]||0;
+    return'<div class="nav-item '+(activeTab===t.id?'active':'')+'" onclick="switchTab(\''+t.id+'\')"><span class="icon">'+t.icon+'</span>'+t.label+'<span class="count">'+cnt+'</span></div>';
+  }).join('');
+  document.getElementById('statsArea').innerHTML='总计 <span>'+total+'</span> · 已完成 <span>'+done+'</span> · 待处理 <span>'+(total-done)+'</span>';
+  var now=new Date();document.getElementById('currentDate').textContent=now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 '+['日','一','二','三','四','五','六'][now.getDay()];
+  var tab=TABS.find(function(t){return t.id===activeTab});document.getElementById('mainTitle').textContent=tab?tab.label:'全部待办';
+}
+
+function renderItem(item,si,k){
+  var od=!item.done&&isOverdue(item.due),dl=dueLabel(item.due);
+  var details=[];
+  if(item.progress)details.push('💬 '+item.progress);
+  if(item.assignee)details.push('👤 '+item.assignee);
+  if(item.email)details.push('📧 '+item.email+(item.emailDate?' ('+item.emailDate+')':''));
+  var h='<div class="todo-item" draggable="true" ondragstart="onDragStart(event,'+si+','+k+')" ondragend="onDragEnd(event)" style="display:flex;align-items:flex-start;gap:12px;padding:12px 8px;border-radius:8px;cursor:grab">';
+  h+='<div onclick="toggle('+si+','+k+')" style="width:20px;height:20px;border:2px solid '+(item.done?'#6c5ce7':'#d1d5db')+';border-radius:5px;cursor:pointer;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;background:'+(item.done?'#6c5ce7':'transparent')+'">'+(item.done?'<span style="color:#fff;font-size:12px;font-weight:700">✓</span>':'')+'</div>';
+  h+='<div style="flex:1;min-width:0"><div style="font-size:13px;line-height:1.5;'+(item.done?'text-decoration:line-through;color:#b2bec3':'color:#2d3436')+'">'+item.title+'</div>';
+  h+='<div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">';
+  if(item.channel)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#e8eaf6;color:#3949ab">🏦 '+item.channel+'</span>';
+  if(item.tag)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#dfe6fd;color:#4a5dc7">'+item.tag+'</span>';
+  h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:'+(item.priority==='urgent'?'#fde8e8':item.priority==='pending'?'#fff3e0':'#e8f5e9')+';color:'+(item.priority==='urgent'?'#d93025':item.priority==='pending'?'#e65100':'#1b873f')+'">'+PL[item.priority]+'</span>';
+  if(item.assignee)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#e0f2fe;color:#0277bd">👤 '+item.assignee+'</span>';
+  if(dl)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:'+(od?'#fde8e8':'#f3e8fd')+';color:'+(od?'#d93025':'#7b1fa2')+'">'+dl+'</span>';
+  h+='</div>';
+  if(details.length)h+='<div style="font-size:11px;color:#aaa;margin-top:3px;line-height:1.6">'+details.join(' · ')+'</div>';
+  h+='</div><div style="display:flex;gap:2px;flex-shrink:0"><span onclick="editItem('+si+','+k+')" style="cursor:pointer;font-size:14px;padding:3px 5px;color:#ccc" title="编辑">✏️</span><span onclick="delItem('+si+','+k+')" style="cursor:pointer;font-size:14px;padding:3px 5px;color:#ccc" title="删除">✕</span></div></div>';
+  return h;
+}
+function render(){
+  renderNav();var c=document.getElementById('mainBody');
+  if(activeTab==='dashboard'){c.innerHTML=renderDashboard();return}
+  var sections=getFilteredSections();
+  if(sections.length===0){c.innerHTML='<div style="text-align:center;padding:40px;color:#ccc">当前分类暂无待办事项</div>';return}
+  var html='';
+  for(var x=0;x<sections.length;x++){
+    var s=sections[x],si=data.sections.indexOf(s),ic=s.items.length,dc=0;
+    for(var j=0;j<s.items.length;j++){if(s.items[j].done)dc++}
+    var collapsed=collapsedSections.has(si);
+    html+='<div class="section" data-si="'+si+'" ondragover="onDragOver(event,'+si+')" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'+si+')"><div class="section-header" onclick="toggleSection('+si+')"><span class="section-icon">'+s.icon+'</span><span class="section-title">'+s.name+'</span><span class="section-count">'+dc+'/'+ic+'</span><span class="section-toggle'+(collapsed?' collapsed':'')+'">▼</span></div><div class="section-body'+(collapsed?' collapsed':'')+'">';
+    if(ic===0){html+='<div style="font-size:11px;color:#d1d5db;text-align:center;padding:12px">暂无待办事项</div>'}
+    else if(s.name==='渠道问题沟通'){
+      var groups={},noChannel=[];
+      s.items.forEach(function(item,k){var ch=item.channel||'';if(ch){if(!groups[ch])groups[ch]=[];groups[ch].push({item:item,k:k})}else{noChannel.push({item:item,k:k})}});
+      Object.keys(groups).sort().forEach(function(ch){
+        html+='<div style="font-size:11px;font-weight:600;color:#3949ab;padding:8px 8px 2px;margin-top:4px;border-bottom:1px solid #f0f0f0">🏦 '+ch+'</div>';
+        groups[ch].forEach(function(o){html+=renderItem(o.item,si,o.k)});
+      });
+      if(noChannel.length){html+='<div style="font-size:11px;font-weight:600;color:#999;padding:8px 8px 2px;margin-top:4px;border-bottom:1px solid #f0f0f0">未分配渠道</div>';noChannel.forEach(function(o){html+=renderItem(o.item,si,o.k)})}
+    }else{for(var k=0;k<s.items.length;k++){html+=renderItem(s.items[k],si,k)}}
+    html+='</div></div>';
+  }
+  c.innerHTML=html;
+}
+function switchTab(id){activeTab=id;render()}
+function toggleSection(si){if(collapsedSections.has(si))collapsedSections.delete(si);else collapsedSections.add(si);render()}
+function toggle(si,ii){data.sections[si].items[ii].done=!data.sections[si].items[ii].done;save();render()}
+function delItem(si,ii){if(confirm('确定删除？')){data.sections[si].items.splice(ii,1);save();render()}}
+function editItem(si,ii){showModal(data.sections[si].items[ii])}
+function buildChannelSelect(val){
+  var sel=document.getElementById('inputChannel');
+  var h='<option value="">不区分渠道</option>';
+  CHANNEL_DATA.forEach(function(g){
+    if(g.items.length>0){
+      h+='<optgroup label="'+g.group+'">';
+      h+='<option value="'+g.group+'"'+(val===g.group?' selected':'')+'>'+g.group+'</option>';
+      g.items.forEach(function(sub){h+='<option value="'+sub+'"'+(val===sub?' selected':'')+'>  '+sub+'</option>'});
+      h+='</optgroup>';
+    }else{h+='<option value="'+g.group+'"'+(val===g.group?' selected':'')+'>'+g.group+'</option>'}
+  });
+  sel.innerHTML=h;
+}
+function toggleChannelRow(){
+  var row=document.getElementById('channelRow');
+  if(row)row.style.display=(document.getElementById('inputSection').value==='渠道问题沟通')?'block':'none';
+}
+function showModal(item){
+  editingItem=item||null;
+  document.getElementById('modalTitle').textContent=item?'编辑待办':'新建待办';
+  document.getElementById('modalConfirm').textContent=item?'保存':'添加';
+  document.getElementById('inputTitle').value=item?item.title:'';
+  document.getElementById('inputPriority').value=item?item.priority:'normal';
+  document.getElementById('inputTag').value=item?(item.tag||''):'';
+  document.getElementById('inputDue').value=item?(item.due||''):'';
+  document.getElementById('inputProgress').value=item?(item.progress||''):'';
+  document.getElementById('inputAssignee').value=item?(item.assignee||''):'';
+  document.getElementById('inputEmail').value=item?(item.email||''):'';
+  document.getElementById('inputEmailDate').value=item?(item.emailDate||''):'';
+  var sel=document.getElementById('inputSection');
+  sel.innerHTML=SECTIONS.map(function(sn){return'<option value="'+sn+'">'+sn+'</option>'}).join('');
+  if(item){var sec=data.sections.find(function(s){return s.items.indexOf(item)>=0});if(sec)sel.value=sec.name}
+  else if(activeTab!=='all'&&activeTab!=='dashboard'&&SECTIONS.indexOf(activeTab)>=0){sel.value=activeTab}
+  buildChannelSelect(item?(item.channel||''):'');
+  toggleChannelRow();
+  document.getElementById('modal').classList.add('show');
+  document.getElementById('inputTitle').focus();
+}
+function hideModal(){document.getElementById('modal').classList.remove('show');editingItem=null}
+function saveTodo(){
+  var title=document.getElementById('inputTitle').value.trim();if(!title)return;
+  var sn=document.getElementById('inputSection').value;
+  var pr=document.getElementById('inputPriority').value;
+  var tag=document.getElementById('inputTag').value.trim();
+  var due=document.getElementById('inputDue').value;
+  var progress=document.getElementById('inputProgress').value.trim();
+  var assignee=document.getElementById('inputAssignee').value.trim();
+  var email=document.getElementById('inputEmail').value.trim();
+  var emailDate=document.getElementById('inputEmailDate').value.trim();
+  var channel=(sn==='渠道问题沟通')?document.getElementById('inputChannel').value:'';
+  if(editingItem){
+    var oldSi=-1,oldIi=-1;
+    data.sections.forEach(function(s,si){var ii=s.items.indexOf(editingItem);if(ii>=0){oldSi=si;oldIi=ii}});
+    editingItem.title=title;editingItem.priority=pr;editingItem.tag=tag;editingItem.due=due;
+    editingItem.progress=progress;editingItem.assignee=assignee;editingItem.email=email;editingItem.emailDate=emailDate;editingItem.channel=channel;
+    if(oldSi>=0&&data.sections[oldSi].name!==sn){data.sections[oldSi].items.splice(oldIi,1);var ns=data.sections.find(function(s){return s.name===sn});if(ns)ns.items.push(editingItem)}
+  }else{
+    var sec=data.sections.find(function(s){return s.name===sn});
+    if(sec)sec.items.push({id:Date.now(),title:title,done:false,priority:pr,tag:tag,due:due,progress:progress,assignee:assignee,email:email,emailDate:emailDate,channel:channel});
+  }
+  save();render();hideModal();
+}
+function onDragStart(e,si,ii){dragSi=si;dragIi=ii;e.dataTransfer.effectAllowed='move'}
+function onDragEnd(){dragSi=null;dragIi=null;document.querySelectorAll('.section').forEach(function(s){s.classList.remove('drag-over')})}
+function onDragOver(e,si){e.preventDefault();document.querySelectorAll('.section').forEach(function(s){s.classList.remove('drag-over')});e.currentTarget.classList.add('drag-over')}
+function onDragLeave(e){e.currentTarget.classList.remove('drag-over')}
+function onDrop(e,tsi){e.preventDefault();e.currentTarget.classList.remove('drag-over');if(dragSi===null||dragIi===null||dragSi===tsi)return;var item=data.sections[dragSi].items.splice(dragIi,1)[0];data.sections[tsi].items.push(item);save();render()}
+function exportExcel(){
+  var rows=[];data.sections.forEach(function(s){s.items.forEach(function(item){rows.push({'分类':s.name,'渠道':item.channel||'','待办内容':item.title,'状态':item.done?'已完成':'待处理','优先级':PL[item.priority]||item.priority,'标签':item.tag||'','内部跟进人':item.assignee||'','到期日':item.due||'','最新进展':item.progress||'','关联邮件':item.email||'','发件日期':item.emailDate||''})})});
+  if(!rows.length){alert('没有数据可导出');return}
+  var ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=[{wch:16},{wch:20},{wch:40},{wch:8},{wch:8},{wch:14},{wch:12},{wch:12},{wch:30},{wch:50},{wch:14}];
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'待办清单');
+  var d=new Date();XLSX.writeFile(wb,'待办清单_'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.xlsx');
+}
+function importData(e){var file=e.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(ev){try{var imported=JSON.parse(ev.target.result);if(imported.sections){data=imported;save();render();alert('导入成功！')}else{alert('文件格式不正确')}}catch(err){alert('解析失败: '+err.message)}};reader.readAsText(file);e.target.value=''}
+function resetData(){if(!confirm('确定重置为默认数据？当前数据将丢失！'))return;data=JSON.parse(JSON.stringify(defaultData));save();render()}
+function requestNotify(){if(!('Notification' in window)){alert('浏览器不支持通知');return}Notification.requestPermission().then(function(p){if(p==='granted'){document.getElementById('notifyBtn').textContent='🔔 提醒已开启';checkDueNotify()}})}
+function checkDueNotify(){if(Notification.permission!=='granted')return;var today=new Date();today.setHours(0,0,0,0);var todayStr=today.toISOString().slice(0,10);var msgs=[];data.sections.forEach(function(s){s.items.forEach(function(item){if(item.done||!item.due)return;if(item.due===todayStr)msgs.push('📌 今天到期: '+item.title);else if(isOverdue(item.due))msgs.push('⚠️ 已过期: '+item.title)})});if(msgs.length>0)new Notification('待办提醒',{body:msgs.join('\n')})}
+document.getElementById('inputTitle').addEventListener('keydown',function(e){if(e.key==='Enter')saveTodo()});
+document.getElementById('inputSection').addEventListener('change',toggleChannelRow);
+render();
+if(Notification.permission==='granted'){document.getElementById('notifyBtn').textContent='🔔 提醒已开启';checkDueNotify()}
+setInterval(checkDueNotify,30*60*1000);
+
+</script>
+</body>
+</html>
