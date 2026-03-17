@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <title>待办清单</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -38,32 +36,6 @@ body{font-family:'Nunito','PingFang SC','Microsoft YaHei',sans-serif;background:
 .btn-add:hover{background:#8b6980}
 .btn-secondary{padding:8px 14px;background:#f8f0f4;border:1px solid #e8d8e2;border-radius:8px;font-size:13px;cursor:pointer;color:#8b6980}
 .btn-secondary:hover{background:#f0e4ec}
-</style>
-</head>
-<body>
-<div class="app">
-<div class="sidebar">
-<div class="sidebar-header"><h1>&#x1F4CB; 待办清单</h1><div class="date" id="currentDate"></div></div>
-<div class="sidebar-nav" id="sidebarNav"></div>
-<div class="sidebar-footer">
-<div class="stats" id="statsArea"></div>
-<div class="sidebar-btns">
-<button class="sidebar-btn" onclick="exportExcel()">&#x1F4BE; 导出Excel</button>
-<button class="sidebar-btn" onclick="document.getElementById('importFile').click()">&#x1F4C2; 导入数据</button>
-<button class="sidebar-btn" onclick="resetData()">&#x1F504; 重置默认</button>
-<button class="sidebar-btn" id="notifyBtn" onclick="requestNotify()">&#x1F514; 开启提醒</button>
-<input type="file" id="importFile" accept=".json" onchange="importData(event)">
-</div></div></div>
-<div class="main">
-<div class="main-header">
-<div class="main-title" id="mainTitle">渠道问题沟通</div>
-<div class="main-actions">
-<button class="btn-secondary" onclick="exportExcel()">&#x1F4CA; 导出Excel</button>
-<button class="btn-add" onclick="showModal()">&#xFF0B; 新建待办</button>
-</div></div>
-<div class="main-body" id="mainBody"></div>
-</div></div>
-<style>
 .main-body{flex:1;overflow-y:auto;padding:20px 30px 30px}
 .section{background:#fff;border-radius:12px;margin-bottom:16px;border:1px solid #f0e4ec;overflow:hidden}
 .section:hover{box-shadow:0 2px 12px rgba(139,105,128,.08)}
@@ -84,6 +56,30 @@ body{font-family:'Nunito','PingFang SC','Microsoft YaHei',sans-serif;background:
 .ch-group-label{font-size:11px;font-weight:600;color:#8b6980;padding:8px 8px 2px;margin-top:4px;border-bottom:1px solid #f0e4ec}
 .ch-group-noassign{font-size:11px;font-weight:600;color:#999;padding:8px 8px 2px;margin-top:4px;border-bottom:1px solid #f0f0f0}
 </style>
+</head>
+<body>
+<div class="app">
+<div class="sidebar">
+<div class="sidebar-header"><h1>📋 待办清单</h1><div class="date" id="currentDate"></div></div>
+<div class="sidebar-nav" id="sidebarNav"></div>
+<div class="sidebar-footer">
+<div class="stats" id="statsArea"></div>
+<div class="sidebar-btns">
+<button class="sidebar-btn" onclick="exportExcel()">💾 导出Excel</button>
+<button class="sidebar-btn" onclick="document.getElementById('importFile').click()">📂 导入数据</button>
+<button class="sidebar-btn" onclick="resetData()">🔄 重置默认</button>
+<button class="sidebar-btn" id="notifyBtn" onclick="requestNotify()">🔔 开启提醒</button>
+<input type="file" id="importFile" accept=".json" onchange="importData(event)">
+</div></div></div>
+<div class="main">
+<div class="main-header">
+<div class="main-title" id="mainTitle">渠道问题沟通</div>
+<div class="main-actions">
+<button class="btn-secondary" onclick="exportExcel()">📊 导出Excel</button>
+<button class="btn-add" onclick="showModal()">＋ 新建待办</button>
+</div></div>
+<div class="main-body" id="mainBody"></div>
+</div></div>
 
 <div class="modal-overlay" id="modal" onclick="onModalOverlayClick(event)">
 <div class="modal" onclick="event.stopPropagation()">
@@ -102,3 +98,213 @@ body{font-family:'Nunito','PingFang SC','Microsoft YaHei',sans-serif;background:
 <button onclick="hideModal()" style="padding:9px 22px;border-radius:8px;font-size:13px;cursor:pointer;border:none;background:#f0f2f5;color:#636e72">取消</button>
 <button id="modalConfirm" onclick="saveTodo()" style="padding:9px 22px;border-radius:8px;font-size:13px;cursor:pointer;border:none;background:#9b7a8f;color:#fff">添加</button>
 </div></div></div>
+<script>
+var SK='todo_v4',editingItem=null,activeTab='渠道问题沟通',dragSi=null,dragIi=null;
+var collapsedSections=new Set();
+var PL={urgent:'紧急',normal:'普通',pending:'待确认'};
+var TABS=[{id:'渠道问题沟通',label:'渠道问题沟通',icon:'🏦'},{id:'渠道-待需求分析',label:'渠道-待需求分析',icon:'📝'},{id:'渠道-跟进中',label:'渠道-跟进中',icon:'🔄'},{id:'渠道-线上验证',label:'渠道-线上验证',icon:'🚀'},{id:'内部问题处理',label:'内部问题处理',icon:'🔧'},{id:'其他事项',label:'其他事项',icon:'📌'}];
+var SECTIONS=['渠道问题沟通','渠道-待需求分析','渠道-跟进中','渠道-线上验证','内部问题处理','其他事项'];
+var CHANNEL_DATA=[
+{group:'星展银行 DBS',items:['星展香港','星展印尼','星展新加坡']},
+{group:'渣打银行 SCB',items:['渣打香港','渣打阿联酋','渣打中国','渣打菲律宾','渣打新加坡','渣打泰国','渣打印尼','渣打审查']},
+{group:'摩根大通 JPM',items:['JPM 香港','JPM 美国','JPM 英国','JPM 中国','JPM 新加坡']},
+{group:'德银 DB',items:['德银香港','德银美国','德银新加坡','德银中国','德银审查','德银越南','德银泰国','德银证书更新']},
+{group:'花旗银行 CITI',items:['花旗上海','花旗香港','花旗澳洲','花旗欧洲','花旗英国/伦敦','花旗波兰','花旗法国','花旗美国','花旗新加坡','花旗墨西哥','花旗加拿大','花旗印尼','花旗泰国','花旗马来西亚','花旗菲律宾','花旗日本','花旗爱尔兰','花旗罗马尼亚','花旗巴西','花旗北美','花旗EMEA地区','Worldlink','花旗审查']},
+{group:'Banking Circle',items:['BC Payment']},
+{group:'GME',items:[]},{group:'Thunes',items:[]},{group:'Onafriq',items:[]},
+{group:'TRANSFERMATE',items:[]},{group:'IBC 芝加哥国际银行',items:[]},
+{group:'barclays 巴克莱',items:['Barclays Corporate bank(UK)','Barclays PLC(SG)']},
+{group:'opentransact',items:[]},{group:'MSB VIETNAM',items:[]},
+{group:'招行（杭州）',items:[]},{group:'招行（海口）',items:[]},{group:'平安（深圳）',items:[]},
+{group:'中行（广州）',items:[]},{group:'中行（深圳）',items:[]},{group:'中行（杭州）',items:[]},
+{group:'汇付天下',items:[]},{group:'KCB-NRA 金城银行',items:[]},{group:'江苏银行',items:[]},
+{group:'北京银行（上海）',items:[]},{group:'上海农商',items:[]},{group:'RD渠道',items:[]},
+{group:'易宝支付',items:[]},{group:'网商银行',items:[]},{group:'富邦银行',items:[]},
+{group:'QBC',items:[]},{group:'Visa direct',items:[]},{group:'Payso',items:[]},
+{group:'Neopay',items:[]},{group:'Hecto',items:[]},{group:'Klasha',items:[]},
+{group:'ICB',items:[]},{group:'UPI',items:[]},{group:'CFSB',items:[]},
+{group:'Alphapay',items:[]},{group:'K Bank',items:[]},{group:'澳门国际',items:[]},
+{group:'Currency Cloud',items:[]},{group:'工行高新',items:[]},{group:'Unionpay',items:[]},
+{group:'越南MSB',items:[]},{group:'MSB',items:[]},{group:'Ouribank',items:[]},{group:'哈尔滨银行',items:[]},
+{group:'泰康资产',items:[]},{group:'南洋商业银行',items:[]},{group:'SKYPAY',items:[]},
+{group:'Facility Pay',items:[]},{group:'CIRCLE',items:[]},{group:'新加坡M-DAQ',items:[]},
+{group:'新西兰Latipay',items:[]},{group:'Triplink',items:[]},{group:'华夏银行',items:[]},
+{group:'BVNK',items:[]},{group:'浦发银行',items:[]},
+{group:'OCBC',items:['OCBC SG','OCBC HK']},
+{group:'建亚（建设银行亚洲）',items:[]},{group:'中信证券',items:[]},{group:'Localpayment',items:[]},
+{group:'Latipay',items:[]},{group:'合利宝',items:[]},{group:'Veem',items:[]},
+{group:'Checkbook',items:[]},{group:'MOOLAHGO',items:[]},{group:'PAYPAL',items:[]},
+{group:'平安资管',items:[]},{group:'Verto',items:[]}
+];
+var defaultData={sections:[
+{name:'渠道问题沟通',icon:'🏦',color:'#e3f2fd',items:[
+{id:2,title:'SSL证书更新回复',done:false,priority:'pending',tag:'OCBC',due:'',progress:'已回复，等待确认',assignee:'',email:'Email_to_OCBC_SSL_Certificate_Update.txt',emailDate:'2026-03',channel:'OCBC'},
+{id:3,title:'SSL证书更新通知',done:false,priority:'normal',tag:'DBS',due:'',progress:'',assignee:'',email:'Email_to_DBS_SSL_Certificate_Update.txt',emailDate:'2026-03',channel:'星展香港'},
+{id:4,title:'CAMT052对账文件解析确认',done:false,priority:'normal',tag:'SCB Indonesia',due:'',progress:'',assignee:'',email:'Email_to_SCB_Indonesia_CAMT052_Parsing.txt',emailDate:'2026-03',channel:'渣打印尼'},
+{id:14,title:'付款失败问题',done:false,priority:'urgent',tag:'渣打香港',due:'',progress:'',assignee:'',channel:'渣打香港'},
+{id:5,title:'结算问题',done:false,priority:'normal',tag:'FP',due:'',progress:'',assignee:'',email:'Email_to_FP_Statement_Download_Error.txt',emailDate:'2026-03',channel:'Facility Pay'},
+{id:6,title:'付款报错问题',done:false,priority:'normal',tag:'VD',due:'',progress:'',assignee:'',channel:'Visa direct'},
+{id:9,title:'背后银行更换',done:false,priority:'normal',tag:'TM',due:'',progress:'',assignee:'',channel:'TRANSFERMATE'},
+{id:10,title:'咨询B2C申卡是否能添加字段',done:false,priority:'normal',tag:'GME',due:'',progress:'',assignee:'',channel:'GME'},
+{id:11,title:'咨询mandate事项',done:false,priority:'normal',tag:'BC',due:'',progress:'',assignee:'',channel:'Banking Circle'},
+{id:100,title:'接口限流问题跟进',done:false,priority:'urgent',tag:'MoolahGo',due:'',progress:'',assignee:'',channel:'MOOLAHGO'},
+{id:60,title:'Payout Query 404问题澄清',done:false,priority:'normal',tag:'Visa',due:'',progress:'',assignee:'',email:'Email_to_Visa_Payout_Query_404_Response.txt',emailDate:'2026-03',channel:'Visa direct'},
+{id:70,title:'接口字段需求确认',done:false,priority:'normal',tag:'TransferMate',due:'',progress:'',assignee:'',email:'Email_to_TransferMate_Integration_Questions.txt',emailDate:'2026-03',channel:'TRANSFERMATE'},
+{id:80,title:'技术支持请求跟进',done:false,priority:'normal',tag:'Verto',due:'',progress:'',assignee:'',email:'Email_to_Verto_Technical_Support_Request.txt',emailDate:'2026-03',channel:'Verto'},
+{id:90,title:'SFTP对接跟进',done:false,priority:'urgent',tag:'Veem',due:'',progress:'',assignee:'',channel:'Veem'},
+{id:200,title:'内部确认后回复易宝排期',done:false,priority:'normal',tag:'易宝',due:'',progress:'',assignee:'',channel:'易宝支付'}
+]},
+{name:'渠道-待需求分析',icon:'📝',color:'#e8f0fe',items:[
+{id:1,title:'BPN - Create Virtual Account 接口字段整理',done:true,priority:'normal',tag:'BPN',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''}
+]},
+{name:'渠道-跟进中',icon:'🔄',color:'#e0f2f1',items:[]},
+{name:'渠道-线上验证',icon:'🚀',color:'#e0f7fa',items:[]},
+{name:'内部问题处理',icon:'🔧',color:'#fce4ec',items:[
+{id:110,title:'申卡人名字字段处理',done:false,priority:'normal',tag:'虚拟卡',due:'',progress:'',assignee:'',channel:''},
+{id:111,title:'MoolahGo名称字段拆分',done:false,priority:'normal',tag:'MoolahGo',due:'',progress:'',assignee:'',channel:'MOOLAHGO'}
+]},
+{name:'其他事项',icon:'📌',color:'#e8f5e9',items:[]}
+]};
+var data;
+try{data=JSON.parse(localStorage.getItem(SK));if(!data||!data.sections)throw 0;
+data.sections.forEach(function(s){s.items.forEach(function(i){if(typeof i.channel==='undefined')i.channel=''})});
+SECTIONS.forEach(function(sn){if(!data.sections.find(function(s){return s.name===sn})){var tab=TABS.find(function(t){return t.id===sn});data.sections.push({name:sn,icon:tab?tab.icon:'📌',color:'#e8f5e9',items:[]})}});
+}catch(e){data=JSON.parse(JSON.stringify(defaultData))}
+function save(){try{localStorage.setItem(SK,JSON.stringify(data))}catch(e){}}
+function getTabCategory(n){for(var i=0;i<TABS.length;i++){if(n===TABS[i].id)return TABS[i].id}return'其他事项'}
+function getFilteredSections(){return data.sections.filter(function(s){return getTabCategory(s.name)===activeTab})}
+function isOverdue(d){if(!d)return false;var t=new Date();t.setHours(0,0,0,0);return new Date(d)<t}
+function dueLabel(d){if(!d)return'';var v=new Date(d),t=new Date();t.setHours(0,0,0,0);var diff=Math.ceil((v-t)/86400000);if(diff<0)return'已过期'+(-diff)+'天';if(diff===0)return'今天到期';if(diff===1)return'明天到期';return diff+'天后到期'}
+function renderNav(){
+  var total=0,done=0,tc={};TABS.forEach(function(t){tc[t.id]=0});
+  data.sections.forEach(function(s){var cat=getTabCategory(s.name);s.items.forEach(function(i){total++;if(i.done)done++;tc[cat]=(tc[cat]||0)+1})});
+  document.getElementById('sidebarNav').innerHTML=TABS.map(function(t){return'<div class="nav-item '+(activeTab===t.id?'active':'')+'" onclick="switchTab(\''+t.id+'\')"><span class="icon">'+t.icon+'</span>'+t.label+'<span class="count">'+tc[t.id]+'</span></div>'}).join('');
+  document.getElementById('statsArea').innerHTML='总计 <span>'+total+'</span> · 已完成 <span>'+done+'</span> · 待处理 <span>'+(total-done)+'</span>';
+  var now=new Date();document.getElementById('currentDate').textContent=now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 '+['日','一','二','三','四','五','六'][now.getDay()];
+  var tab=TABS.find(function(t){return t.id===activeTab});document.getElementById('mainTitle').textContent=tab?tab.label:'待办清单';
+}
+function renderItem(item,si,k){
+  var od=!item.done&&isOverdue(item.due),dl=dueLabel(item.due);
+  var details=[];
+  if(item.progress)details.push('💬 '+item.progress);
+  if(item.assignee)details.push('👤 '+item.assignee);
+  if(item.email)details.push('📧 '+item.email+(item.emailDate?' ('+item.emailDate+')':''));
+  var h='<div class="todo-item" draggable="true" ondragstart="onDragStart(event,'+si+','+k+')" ondragend="onDragEnd(event)" style="display:flex;align-items:flex-start;gap:12px;padding:12px 8px;border-radius:8px;cursor:grab">';
+  h+='<div onclick="toggle('+si+','+k+')" style="width:20px;height:20px;border:2px solid '+(item.done?'#9b7a8f':'#d1c4cc')+';border-radius:5px;cursor:pointer;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;background:'+(item.done?'#9b7a8f':'transparent')+'">'+(item.done?'<span style="color:#fff;font-size:12px;font-weight:700">✓</span>':'')+'</div>';
+  h+='<div style="flex:1;min-width:0"><div style="font-size:13px;line-height:1.5;'+(item.done?'text-decoration:line-through;color:#c4b0bc':'color:#5a4050')+'">'+item.title+'</div>';
+  h+='<div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">';
+  if(item.channel)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#f0e4ec;color:#8b6980">🏦 '+item.channel+'</span>';
+  if(item.tag)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#ede4f0;color:#7b5e8a">'+item.tag+'</span>';
+  h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:'+(item.priority==='urgent'?'#fde8e8':item.priority==='pending'?'#fff3e0':'#e8f5e9')+';color:'+(item.priority==='urgent'?'#d93025':item.priority==='pending'?'#e65100':'#1b873f')+'">'+PL[item.priority]+'</span>';
+  if(item.assignee)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#e0f2fe;color:#0277bd">👤 '+item.assignee+'</span>';
+  if(dl)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:'+(od?'#fde8e8':'#f3e8fd')+';color:'+(od?'#d93025':'#7b1fa2')+'">'+dl+'</span>';
+  h+='</div>';
+  if(details.length)h+='<div style="font-size:11px;color:#aaa;margin-top:3px;line-height:1.6">'+details.join(' · ')+'</div>';
+  h+='</div><div style="display:flex;gap:2px;flex-shrink:0"><span onclick="editItem('+si+','+k+')" style="cursor:pointer;font-size:14px;padding:3px 5px;color:#ccc" title="编辑">✏️</span><span onclick="delItem('+si+','+k+')" style="cursor:pointer;font-size:14px;padding:3px 5px;color:#ccc" title="删除">✕</span></div></div>';
+  return h;
+}
+function render(){
+  renderNav();var sections=getFilteredSections();var c=document.getElementById('mainBody');
+  if(sections.length===0){c.innerHTML='<div style="text-align:center;padding:40px;color:#ccc">当前分类暂无待办事项</div>';return}
+  var html='';
+  for(var x=0;x<sections.length;x++){
+    var s=sections[x],si=data.sections.indexOf(s),ic=s.items.length,dc=0;
+    for(var j=0;j<s.items.length;j++){if(s.items[j].done)dc++}
+    var collapsed=collapsedSections.has(si);
+    html+='<div class="section" data-si="'+si+'" ondragover="onDragOver(event,'+si+')" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'+si+')"><div class="section-header" onclick="toggleSection('+si+')"><span class="section-icon">'+s.icon+'</span><span class="section-title">'+s.name+'</span><span class="section-count">'+dc+'/'+ic+'</span><span class="section-toggle'+(collapsed?' collapsed':'')+'">▼</span></div><div class="section-body'+(collapsed?' collapsed':'')+'">';
+    if(ic===0){html+='<div style="font-size:11px;color:#d1d5db;text-align:center;padding:12px">暂无待办事项</div>'}
+    else if(s.name==='渠道问题沟通'){
+      var groups={},noChannel=[];
+      s.items.forEach(function(item,k){var ch=item.channel||'';if(ch){if(!groups[ch])groups[ch]=[];groups[ch].push({item:item,k:k})}else{noChannel.push({item:item,k:k})}});
+      Object.keys(groups).sort().forEach(function(ch){
+        html+='<div class="ch-group-label">🏦 '+ch+'</div>';
+        groups[ch].forEach(function(o){html+=renderItem(o.item,si,o.k)});
+      });
+      if(noChannel.length){html+='<div class="ch-group-noassign">未分配渠道</div>';noChannel.forEach(function(o){html+=renderItem(o.item,si,o.k)})}
+    } else {for(var k=0;k<s.items.length;k++){html+=renderItem(s.items[k],si,k)}}
+    html+='</div></div>';
+  }
+  c.innerHTML=html;
+}
+function switchTab(id){activeTab=id;render()}
+function toggleSection(si){if(collapsedSections.has(si))collapsedSections.delete(si);else collapsedSections.add(si);render()}
+function toggle(si,ii){data.sections[si].items[ii].done=!data.sections[si].items[ii].done;save();render()}
+function delItem(si,ii){if(confirm('确定删除？')){data.sections[si].items.splice(ii,1);save();render()}}
+function editItem(si,ii){showModal(data.sections[si].items[ii])}
+function buildChannelSelect(selEl,val){
+  var h='<option value="">不区分渠道</option>';
+  CHANNEL_DATA.forEach(function(g){
+    if(g.items.length>0){h+='<optgroup label="'+g.group+'">';h+='<option value="'+g.group+'"'+(val===g.group?' selected':'')+'>'+g.group+'</option>';g.items.forEach(function(sub){h+='<option value="'+sub+'"'+(val===sub?' selected':'')+'>  '+sub+'</option>'});h+='</optgroup>'}
+    else{h+='<option value="'+g.group+'"'+(val===g.group?' selected':'')+'>'+g.group+'</option>'}
+  });selEl.innerHTML=h;
+}
+function toggleChannelRow(){document.getElementById('channelRow').style.display=(document.getElementById('inputSection').value==='渠道问题沟通')?'block':'none'}
+function showModal(item){
+  editingItem=item||null;
+  document.getElementById('modalTitle').textContent=item?'编辑待办':'新建待办';
+  document.getElementById('modalConfirm').textContent=item?'保存':'添加';
+  document.getElementById('inputTitle').value=item?item.title:'';
+  document.getElementById('inputPriority').value=item?item.priority:'normal';
+  document.getElementById('inputTag').value=item?(item.tag||''):'';
+  document.getElementById('inputDue').value=item?(item.due||''):'';
+  document.getElementById('inputProgress').value=item?(item.progress||''):'';
+  document.getElementById('inputAssignee').value=item?(item.assignee||''):'';
+  document.getElementById('inputEmail').value=item?(item.email||''):'';
+  document.getElementById('inputEmailDate').value=item?(item.emailDate||''):'';
+  var sel=document.getElementById('inputSection');
+  sel.innerHTML=SECTIONS.map(function(sn){return'<option value="'+sn+'">'+sn+'</option>'}).join('');
+  if(item){var sec=data.sections.find(function(s){return s.items.indexOf(item)>=0});if(sec)sel.value=sec.name}
+  else if(SECTIONS.indexOf(activeTab)>=0){sel.value=activeTab}
+  buildChannelSelect(document.getElementById('inputChannel'),item?(item.channel||''):'');
+  toggleChannelRow();
+  document.getElementById('modal').classList.add('show');
+  document.getElementById('inputTitle').focus();
+}
+function hideModal(){document.getElementById('modal').classList.remove('show');editingItem=null}
+function onModalOverlayClick(e){if(e.target===e.currentTarget)hideModal()}
+function saveTodo(){
+  var title=document.getElementById('inputTitle').value.trim();if(!title)return;
+  var sn=document.getElementById('inputSection').value;
+  var pr=document.getElementById('inputPriority').value;
+  var tag=document.getElementById('inputTag').value.trim();
+  var due=document.getElementById('inputDue').value;
+  var progress=document.getElementById('inputProgress').value.trim();
+  var assignee=document.getElementById('inputAssignee').value.trim();
+  var email=document.getElementById('inputEmail').value.trim();
+  var emailDate=document.getElementById('inputEmailDate').value.trim();
+  var channel=(sn==='渠道问题沟通')?document.getElementById('inputChannel').value:'';
+  if(editingItem){
+    var oldSi=-1,oldIi=-1;
+    data.sections.forEach(function(s,si){var ii=s.items.indexOf(editingItem);if(ii>=0){oldSi=si;oldIi=ii}});
+    editingItem.title=title;editingItem.priority=pr;editingItem.tag=tag;editingItem.due=due;
+    editingItem.progress=progress;editingItem.assignee=assignee;editingItem.email=email;editingItem.emailDate=emailDate;editingItem.channel=channel;
+    if(oldSi>=0&&data.sections[oldSi].name!==sn){data.sections[oldSi].items.splice(oldIi,1);var ns=data.sections.find(function(s){return s.name===sn});if(ns)ns.items.push(editingItem)}
+  }else{
+    var sec=data.sections.find(function(s){return s.name===sn});
+    if(sec)sec.items.push({id:Date.now(),title:title,done:false,priority:pr,tag:tag,due:due,progress:progress,assignee:assignee,email:email,emailDate:emailDate,channel:channel});
+  }
+  save();render();hideModal();
+}
+function onDragStart(e,si,ii){dragSi=si;dragIi=ii;e.dataTransfer.effectAllowed='move'}
+function onDragEnd(e){dragSi=null;dragIi=null;document.querySelectorAll('.section').forEach(function(s){s.classList.remove('drag-over')})}
+function onDragOver(e,si){e.preventDefault();document.querySelectorAll('.section').forEach(function(s){s.classList.remove('drag-over')});e.currentTarget.classList.add('drag-over')}
+function onDragLeave(e){e.currentTarget.classList.remove('drag-over')}
+function onDrop(e,tsi){e.preventDefault();e.currentTarget.classList.remove('drag-over');if(dragSi===null||dragIi===null||dragSi===tsi)return;var item=data.sections[dragSi].items.splice(dragIi,1)[0];data.sections[tsi].items.push(item);save();render()}
+function exportExcel(){
+  var rows=[];data.sections.forEach(function(s){s.items.forEach(function(item){rows.push({'分类':s.name,'渠道':item.channel||'','待办内容':item.title,'状态':item.done?'已完成':'待处理','优先级':PL[item.priority]||item.priority,'标签':item.tag||'','内部跟进人':item.assignee||'','到期日':item.due||'','最新进展':item.progress||'','关联邮件':item.email||'','发件日期':item.emailDate||''})})});
+  if(rows.length===0){alert('没有数据可导出');return}
+  var ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=[{wch:16},{wch:20},{wch:40},{wch:8},{wch:8},{wch:14},{wch:12},{wch:12},{wch:30},{wch:50},{wch:14}];
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'待办清单');
+  var d=new Date();XLSX.writeFile(wb,'待办清单_'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.xlsx');
+}
+function importData(e){var file=e.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(ev){try{var imported=JSON.parse(ev.target.result);if(imported.sections){data=imported;save();render();alert('导入成功！')}else{alert('文件格式不正确')}}catch(err){alert('解析失败: '+err.message)}};reader.readAsText(file);e.target.value=''}
+function resetData(){if(!confirm('确定重置为默认数据？当前数据将丢失！'))return;data=JSON.parse(JSON.stringify(defaultData));save();render()}
+function requestNotify(){if(!('Notification' in window)){alert('浏览器不支持通知');return}Notification.requestPermission().then(function(p){if(p==='granted'){document.getElementById('notifyBtn').textContent='🔔 提醒已开启';checkDueNotify()}})}
+function checkDueNotify(){if(Notification.permission!=='granted')return;var today=new Date();today.setHours(0,0,0,0);var todayStr=today.toISOString().slice(0,10);var msgs=[];data.sections.forEach(function(s){s.items.forEach(function(item){if(item.done||!item.due)return;if(item.due===todayStr)msgs.push('📌 今天到期: '+item.title);else if(isOverdue(item.due))msgs.push('⚠️ 已过期: '+item.title)})});if(msgs.length>0)new Notification('待办提醒',{body:msgs.join('\n')})}
+document.getElementById('inputTitle').addEventListener('keydown',function(e){if(e.key==='Enter')saveTodo()});
+render();
+if(Notification.permission==='granted'){document.getElementById('notifyBtn').textContent='🔔 提醒已开启';checkDueNotify()}
+setInterval(checkDueNotify,30*60*1000);
+</script>
+</body>
+</html>
