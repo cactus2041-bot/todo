@@ -4,63 +4,65 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>待办清单</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Nunito','PingFang SC','Microsoft YaHei',sans-serif;background:#f3eeeb;color:#6b5c5c;height:100vh;overflow:hidden}
+body{font-family:'Nunito','PingFang SC','Microsoft YaHei',sans-serif;background:linear-gradient(135deg,#f5e6f0 0%,#e8eaf6 50%,#f0e6ef 100%);color:#5a4a5e;height:100vh;overflow:hidden}
 .app{display:flex;height:100vh}
-.sidebar{width:220px;background:linear-gradient(180deg,#a09090,#7d7070);color:#efe8e5;display:flex;flex-direction:column;flex-shrink:0}
-.sidebar-header{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.12)}
-.sidebar-header h1{font-size:20px;color:#fff;display:flex;align-items:center;gap:8px}
-.sidebar-header .date{font-size:12px;color:#d8ccc8;margin-top:6px}
+.sidebar{width:220px;background:linear-gradient(180deg,#c4a0b9 0%,#a8b5d6 50%,#d4a0b8 100%);color:#fff;display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-header{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.2)}
+.sidebar-header h1{font-size:20px;color:#fff;display:flex;align-items:center;gap:8px;text-shadow:0 1px 3px rgba(0,0,0,.1)}
+.sidebar-header .date{font-size:12px;color:rgba(255,255,255,.8);margin-top:6px}
 .sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .15s;margin-bottom:2px;color:#d8ccc8}
-.nav-item:hover{background:rgba(255,255,255,.1);color:#fff}
-.nav-item.active{background:rgba(255,255,255,.18);color:#fff;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:13px;transition:all .2s;margin-bottom:3px;color:rgba(255,255,255,.85)}
+.nav-item:hover{background:rgba(255,255,255,.2);color:#fff}
+.nav-item.active{background:rgba(255,255,255,.3);color:#fff;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .nav-item .icon{font-size:16px;width:22px;text-align:center}
-.nav-item .count{margin-left:auto;background:rgba(255,255,255,.12);padding:1px 8px;border-radius:10px;font-size:11px}
-.sidebar-footer{padding:14px;border-top:1px solid rgba(255,255,255,.12)}
-.sidebar-footer .stats{font-size:11px;color:#d8ccc8;line-height:1.8}
-.sidebar-footer .stats span{color:#fff;font-weight:600}
+.nav-item .count{margin-left:auto;background:rgba(255,255,255,.25);padding:1px 8px;border-radius:10px;font-size:11px}
+.sidebar-footer{padding:14px;border-top:1px solid rgba(255,255,255,.2)}
+.sidebar-footer .stats{font-size:11px;color:rgba(255,255,255,.8);line-height:1.8}
+.sidebar-footer .stats span{color:#fff;font-weight:700}
 .sidebar-btns{display:flex;flex-direction:column;gap:6px;margin-top:10px}
-.sidebar-btn{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:6px;font-size:12px;cursor:pointer;border:none;background:rgba(255,255,255,.08);color:#d8ccc8;transition:all .15s}
-.sidebar-btn:hover{background:rgba(255,255,255,.16);color:#fff}
+.sidebar-btn{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;font-size:12px;cursor:pointer;border:none;background:rgba(255,255,255,.15);color:rgba(255,255,255,.9);transition:all .2s}
+.sidebar-btn:hover{background:rgba(255,255,255,.3);color:#fff}
 #importFile{display:none}
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.main-header{padding:20px 30px 16px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between}
-.main-title{font-size:18px;font-weight:700;color:#6b5c5c}
+.main-header{padding:20px 30px 16px;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(196,160,185,.15);display:flex;align-items:center;justify-content:space-between}
+.main-title{font-size:18px;font-weight:700;color:#6b5070}
 .main-actions{display:flex;gap:8px}
-.btn-add{display:flex;align-items:center;gap:6px;padding:8px 18px;background:#b0a0a0;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer}
-.btn-add:hover{background:#a09090}
-.btn-secondary{padding:8px 14px;background:#f0ebe8;border:1px solid #e0d5d0;border-radius:8px;font-size:13px;cursor:pointer;color:#8a7a7a}
-.btn-secondary:hover{background:#e8e0dc}
+.btn-add{display:flex;align-items:center;gap:6px;padding:8px 18px;background:linear-gradient(135deg,#c4a0b9,#a8b5d6);color:#fff;border:none;border-radius:10px;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(196,160,185,.3);transition:all .2s}
+.btn-add:hover{box-shadow:0 4px 12px rgba(196,160,185,.4);transform:translateY(-1px)}
+.btn-secondary{padding:8px 14px;background:rgba(196,160,185,.1);border:1px solid rgba(196,160,185,.25);border-radius:10px;font-size:13px;cursor:pointer;color:#9b7a8f;transition:all .2s}
+.btn-secondary:hover{background:rgba(196,160,185,.2)}
 .main-body{flex:1;overflow-y:auto;padding:20px 30px 30px}
-.section{background:#fff;border-radius:12px;margin-bottom:16px;border:1px solid #e8ddd8;overflow:hidden}
-.section:hover{box-shadow:0 2px 12px rgba(140,120,120,.06)}
-.section.drag-over{border-color:#b0a0a0;box-shadow:0 0 0 2px rgba(176,160,160,.15)}
-.section-header{padding:14px 20px;display:flex;align-items:center;gap:10px;background:#f7f2f0;border-bottom:1px solid #e8ddd8;cursor:pointer}
-.section-icon{font-size:16px}.section-title{font-size:14px;font-weight:600;flex:1;color:#6b5c5c}
-.section-count{font-size:11px;background:#ece4e0;padding:2px 10px;border-radius:10px;color:#8a7a7a}
-.section-toggle{font-size:12px;color:#b8b0ac;transition:transform .2s}
+.section{background:rgba(255,255,255,.75);border-radius:14px;margin-bottom:16px;border:1px solid rgba(196,160,185,.15);overflow:hidden;transition:all .2s}
+.section:hover{box-shadow:0 4px 16px rgba(196,160,185,.12);border-color:rgba(196,160,185,.25)}
+.section.drag-over{border-color:#c4a0b9;box-shadow:0 0 0 2px rgba(196,160,185,.2)}
+.section-header{padding:14px 20px;display:flex;align-items:center;gap:10px;background:rgba(245,230,240,.5);border-bottom:1px solid rgba(196,160,185,.1);cursor:pointer}
+.section-icon{font-size:16px}.section-title{font-size:14px;font-weight:600;flex:1;color:#6b5070}
+.section-count{font-size:11px;background:rgba(196,160,185,.15);padding:2px 10px;border-radius:10px;color:#9b7a8f}
+.section-toggle{font-size:12px;color:#c4b0bc;transition:transform .2s}
 .section-toggle.collapsed{transform:rotate(-90deg)}
 .section-body{padding:4px 12px}.section-body.collapsed{display:none}
-.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(90,74,94,.4);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center}
 .modal-overlay.show{display:flex}
-.modal{background:#fff;border-radius:16px;padding:28px;width:480px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
-.modal h3{font-size:18px;margin-bottom:18px;color:#2d3436}
-.modal label{display:block;font-size:12px;color:#636e72;margin:10px 0 4px}
-.modal input,.modal select{width:100%;padding:9px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;outline:none}
-.modal input:focus,.modal select:focus{border-color:#b0a0a0}
-.ch-group-label{font-size:11px;font-weight:600;color:#8a7a7a;padding:8px 8px 2px;margin-top:4px;border-bottom:1px solid #e8ddd8}
-.ch-group-noassign{font-size:11px;font-weight:600;color:#999;padding:8px 8px 2px;margin-top:4px;border-bottom:1px solid #f0f0f0}
+.modal{background:#fff;border-radius:18px;padding:28px;width:480px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(90,74,94,.2)}
+.modal h3{font-size:18px;margin-bottom:18px;color:#6b5070}
+.modal label{display:block;font-size:12px;color:#9b7a8f;margin:10px 0 4px}
+.modal input,.modal select{width:100%;padding:9px 12px;border:1px solid rgba(196,160,185,.3);border-radius:10px;font-size:13px;outline:none;transition:border-color .2s}
+.modal input:focus,.modal select:focus{border-color:#c4a0b9;box-shadow:0 0 0 3px rgba(196,160,185,.1)}
+.ch-group-label{font-size:11px;font-weight:600;color:#9b7a8f;padding:8px 8px 2px;margin-top:4px;border-bottom:1px solid rgba(196,160,185,.15)}
+.ch-group-noassign{font-size:11px;font-weight:600;color:#b0a0b5;padding:8px 8px 2px;margin-top:4px;border-bottom:1px solid rgba(196,160,185,.1)}
 </style>
 </head>
 <body>
 <div class="app">
 <div class="sidebar">
-<div class="sidebar-header"><h1>📋 待办清单</h1><div class="date" id="currentDate"></div></div>
+<div class="sidebar-header"><h1>🌸 待办清单</h1><div class="date" id="currentDate"></div></div>
 <div class="sidebar-nav" id="sidebarNav"></div>
 <div class="sidebar-footer">
 <div class="stats" id="statsArea"></div>
@@ -81,7 +83,7 @@ body{font-family:'Nunito','PingFang SC','Microsoft YaHei',sans-serif;background:
 <div class="main-body" id="mainBody"></div>
 </div></div>
 
-<div class="modal-overlay" id="modal" onclick="onModalOverlayClick(event)">
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)hideModal()">
 <div class="modal" onclick="event.stopPropagation()">
 <h3 id="modalTitle">新建待办</h3>
 <label>待办内容</label><input type="text" id="inputTitle" placeholder="输入待办内容">
@@ -95,14 +97,22 @@ body{font-family:'Nunito','PingFang SC','Microsoft YaHei',sans-serif;background:
 <label>关联邮件</label><input type="text" id="inputEmail" placeholder="邮件文件名">
 <label>发件日期</label><input type="text" id="inputEmailDate" placeholder="如 2026-03">
 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
-<button onclick="hideModal()" style="padding:9px 22px;border-radius:8px;font-size:13px;cursor:pointer;border:none;background:#f0f2f5;color:#636e72">取消</button>
-<button id="modalConfirm" onclick="saveTodo()" style="padding:9px 22px;border-radius:8px;font-size:13px;cursor:pointer;border:none;background:#b0a0a0;color:#fff">添加</button>
+<button onclick="hideModal()" style="padding:9px 22px;border-radius:10px;font-size:13px;cursor:pointer;border:none;background:rgba(196,160,185,.15);color:#9b7a8f">取消</button>
+<button id="modalConfirm" onclick="saveTodo()" style="padding:9px 22px;border-radius:10px;font-size:13px;cursor:pointer;border:none;background:linear-gradient(135deg,#c4a0b9,#a8b5d6);color:#fff;box-shadow:0 2px 8px rgba(196,160,185,.3)">添加</button>
 </div></div></div>
+
 <script>
-var SK='todo_v4',editingItem=null,activeTab='渠道问题沟通',dragSi=null,dragIi=null;
+var SK='todo_v5',editingItem=null,activeTab='渠道问题沟通',dragSi=null,dragIi=null;
 var collapsedSections=new Set();
 var PL={urgent:'紧急',normal:'普通',pending:'待确认'};
-var TABS=[{id:'渠道问题沟通',label:'渠道问题沟通',icon:'🏦'},{id:'渠道-待需求分析',label:'渠道-待需求分析',icon:'📝'},{id:'渠道-跟进中',label:'渠道-跟进中',icon:'🔄'},{id:'渠道-线上验证',label:'渠道-线上验证',icon:'🚀'},{id:'内部问题处理',label:'内部问题处理',icon:'🔧'},{id:'其他事项',label:'其他事项',icon:'📌'}];
+var TABS=[
+{id:'渠道问题沟通',label:'渠道问题沟通',icon:'🏦'},
+{id:'渠道-待需求分析',label:'渠道-待需求分析',icon:'📝'},
+{id:'渠道-跟进中',label:'渠道-跟进中',icon:'🔄'},
+{id:'渠道-线上验证',label:'渠道-线上验证',icon:'🚀'},
+{id:'内部问题处理',label:'内部问题处理',icon:'🔧'},
+{id:'其他事项',label:'其他事项',icon:'📌'}
+];
 var SECTIONS=['渠道问题沟通','渠道-待需求分析','渠道-跟进中','渠道-线上验证','内部问题处理','其他事项'];
 var CHANNEL_DATA=[
 {group:'星展银行 DBS',items:['星展香港','星展印尼','星展新加坡']},
@@ -134,10 +144,10 @@ var CHANNEL_DATA=[
 {group:'建亚（建设银行亚洲）',items:[]},{group:'中信证券',items:[]},{group:'Localpayment',items:[]},
 {group:'Latipay',items:[]},{group:'合利宝',items:[]},{group:'Veem',items:[]},
 {group:'Checkbook',items:[]},{group:'MOOLAHGO',items:[]},{group:'PAYPAL',items:[]},
-{group:'平安资管',items:[]},{group:'Verto',items:[]}
+{group:'平安资管',items:[]},{group:'Verto',items:[]},{group:'BPN',items:[]}
 ];
 var defaultData={sections:[
-{name:'渠道问题沟通',icon:'🏦',color:'#ece4e0',items:[
+{name:'渠道问题沟通',icon:'🏦',color:'#f0e4ec',items:[
 {id:2,title:'SSL证书更新回复',done:false,priority:'pending',tag:'OCBC',due:'',progress:'已回复，等待确认',assignee:'',email:'Email_to_OCBC_SSL_Certificate_Update.txt / Email_Reply_to_OCBC_SSL_Certificate.txt',emailDate:'2026-03 / 2026-03-16',channel:'OCBC'},
 {id:3,title:'SSL证书更新通知',done:false,priority:'normal',tag:'DBS',due:'',progress:'',assignee:'',email:'Email_to_DBS_SSL_Certificate_Update.txt',emailDate:'2026-03',channel:'星展香港'},
 {id:16,title:'Duplicate Entries of Corp Code and VA Number.[R003]',done:false,priority:'normal',tag:'DBS',due:'',progress:'',assignee:'',channel:'星展香港'},
@@ -156,41 +166,51 @@ var defaultData={sections:[
 {id:60,title:'Payout Query 404问题澄清',done:false,priority:'normal',tag:'Visa',due:'',progress:'',assignee:'',email:'Email_to_Visa_Payout_Query_404_Response.txt',emailDate:'2026-03',channel:'Visa direct'},
 {id:70,title:'接口字段需求确认',done:false,priority:'normal',tag:'TransferMate',due:'',progress:'',assignee:'',email:'Email_to_TransferMate_Integration_Questions.txt',emailDate:'2026-03',channel:'TRANSFERMATE'},
 {id:80,title:'技术支持请求跟进',done:false,priority:'normal',tag:'Verto',due:'',progress:'',assignee:'',email:'Email_to_Verto_Technical_Support_Request.txt',emailDate:'2026-03',channel:'Verto'},
+{id:81,title:'Webhook失败问题（9999.99 NGN）',done:false,priority:'urgent',tag:'Verto',due:'',progress:'已发邮件',assignee:'',email:'Email_to_Verto_Webhook_Failure.txt',emailDate:'2026-03',channel:'Verto'},
 {id:90,title:'SFTP对接跟进',done:false,priority:'urgent',tag:'Veem',due:'',progress:'',assignee:'',channel:'Veem'},
-{id:200,title:'内部确认后回复易宝排期',done:false,priority:'normal',tag:'易宝',due:'',progress:'',assignee:'',channel:'易宝支付'}
+{id:200,title:'内部确认后回复易宝排期',done:false,priority:'normal',tag:'易宝',due:'',progress:'',assignee:'',channel:'易宝支付'},
+{id:210,title:'MSB反馈回复（SFTP对账/VND payout/材料格式）',done:true,priority:'normal',tag:'MSB',due:'',progress:'已回复',assignee:'',email:'Email_Reply_to_MSB_Feedback.txt',emailDate:'2026-03',channel:'MSB'},
+{id:220,title:'Circle CPN Wallet绑定（EU团队）',done:false,priority:'normal',tag:'Circle',due:'',progress:'已发邮件给EU团队',assignee:'',email:'Email_to_EU_Circle_CPN_Wallet_Binding.txt',emailDate:'2026-03',channel:'CIRCLE'},
+{id:230,title:'KES虚拟卡申请报错 - Not eligible to link VA',done:false,priority:'urgent',tag:'BPN',due:'',progress:'待发邮件给BPN',assignee:'',channel:'BPN'}
 ]},
-{name:'渠道-待需求分析',icon:'📝',color:'#e8e0dc',items:[
-{id:1,title:'BPN - Create Virtual Account 接口字段整理',done:true,priority:'normal',tag:'BPN',due:'',progress:'',assignee:'',email:'',emailDate:'',channel:''}
+{name:'渠道-待需求分析',icon:'📝',color:'#f0e4ec',items:[
+{id:1,title:'BPN - Create Virtual Account 接口字段整理',done:true,priority:'normal',tag:'BPN',due:'',progress:'',assignee:'',channel:''},
+{id:301,title:'BPN - AddDepositSender 接口字段整理',done:true,priority:'normal',tag:'BPN',due:'',progress:'',assignee:'',channel:''},
+{id:302,title:'BPN - AddWithdrawWhitelist 接口字段整理',done:true,priority:'normal',tag:'BPN',due:'',progress:'',assignee:'',channel:''},
+{id:303,title:'BPN - Payout 接口字段整理',done:true,priority:'normal',tag:'BPN',due:'',progress:'',assignee:'',channel:''},
+{id:304,title:'BPN - RequestWithdraw 接口字段整理',done:true,priority:'normal',tag:'BPN',due:'',progress:'',assignee:'',channel:''},
+{id:305,title:'BPN - USDPayout 接口字段整理',done:true,priority:'normal',tag:'BPN',due:'',progress:'',assignee:'',channel:''},
+{id:316,title:'BPN - SubVirtualAccount RFI 流程梳理',done:true,priority:'normal',tag:'BPN',due:'',progress:'',assignee:'',channel:''},
+{id:306,title:'TransferMate - Onboarding 接口字段整理',done:true,priority:'normal',tag:'TransferMate',due:'',progress:'',assignee:'',channel:'TRANSFERMATE'},
+{id:307,title:'TransferMate - AddSweepRule 接口字段整理',done:true,priority:'normal',tag:'TransferMate',due:'',progress:'',assignee:'',channel:'TRANSFERMATE'},
+{id:308,title:'TransferMate - GlobalAccount 接口字段整理',done:true,priority:'normal',tag:'TransferMate',due:'',progress:'',assignee:'',channel:'TRANSFERMATE'},
+{id:309,title:'Citi - France SEPA 付款需求整理',done:true,priority:'normal',tag:'Citi',due:'',progress:'',assignee:'',channel:'花旗法国'},
+{id:310,title:'上海农商行 - 跨境转汇对接需求文档',done:true,priority:'normal',tag:'SRCB',due:'',progress:'',assignee:'',channel:'上海农商'},
+{id:311,title:'渣打香港 - SWIFT付款中间行支持需求文档',done:false,priority:'normal',tag:'SCB',due:'',progress:'',assignee:'',channel:'渣打香港'},
+{id:312,title:'网联 - 跨境收款业务对接方案',done:true,priority:'normal',tag:'网联',due:'',progress:'',assignee:'',channel:''},
+{id:313,title:'Verto - 接口字段映射整理',done:true,priority:'normal',tag:'Verto',due:'',progress:'',assignee:'',channel:'Verto'},
+{id:314,title:'MSB - 接口对接需求分析',done:false,priority:'normal',tag:'MSB',due:'',progress:'',assignee:'',channel:'MSB'},
+{id:315,title:'申卡国家规则管理需求文档',done:false,priority:'normal',tag:'虚拟卡',due:'',progress:'',assignee:'',channel:''}
 ]},
-{name:'渠道-跟进中',icon:'🔄',color:'#e0e4e0',items:[]},
-{name:'渠道-线上验证',icon:'🚀',color:'#dce8e8',items:[]},
-{name:'内部问题处理',icon:'🔧',color:'#ece0e0',items:[
+{name:'渠道-跟进中',icon:'🔄',color:'#f0e4ec',items:[]},
+{name:'渠道-线上验证',icon:'🚀',color:'#f0e4ec',items:[]},
+{name:'内部问题处理',icon:'🔧',color:'#f0e4ec',items:[
 {id:110,title:'申卡人名字字段处理',done:false,priority:'normal',tag:'虚拟卡',due:'',progress:'',assignee:'',channel:''},
 {id:111,title:'MoolahGo名称字段拆分',done:false,priority:'normal',tag:'MoolahGo',due:'',progress:'',assignee:'',channel:'MOOLAHGO'}
 ]},
-{name:'其他事项',icon:'📌',color:'#e4e4e0',items:[]}
+{name:'其他事项',icon:'📌',color:'#f0e4ec',items:[]}
 ]};
-var MIGRATE_MAP={'需求文档编写':'渠道-待需求分析','上线跟进':'渠道-线上验证'};
 var data;
-try{data=JSON.parse(localStorage.getItem(SK));if(!data||!data.sections)throw 0;
-data.sections.forEach(function(s){s.items.forEach(function(i){if(typeof i.channel==='undefined')i.channel=''})});
-SECTIONS.forEach(function(sn){if(!data.sections.find(function(s){return s.name===sn})){var tab=TABS.find(function(t){return t.id===sn});data.sections.push({name:sn,icon:tab?tab.icon:'📌',color:'#e4e4e0',items:[]})}});
-}catch(e){
-var oldData=null;
-try{oldData=JSON.parse(localStorage.getItem('todo_v3'));if(!oldData||!oldData.sections)oldData=null}catch(e2){}
-if(oldData){
-data={sections:[]};
-oldData.sections.forEach(function(os){
-var newName=MIGRATE_MAP[os.name]||os.name;
-if(SECTIONS.indexOf(newName)<0)newName='其他事项';
-var existing=data.sections.find(function(s){return s.name===newName});
-if(!existing){var tab=TABS.find(function(t){return t.id===newName});existing={name:newName,icon:tab?tab.icon:'📌',color:'#e4e4e0',items:[]};data.sections.push(existing)}
-os.items.forEach(function(item){if(typeof item.channel==='undefined')item.channel='';existing.items.push(item)});
-});
-SECTIONS.forEach(function(sn){if(!data.sections.find(function(s){return s.name===sn})){var tab=TABS.find(function(t){return t.id===sn});data.sections.push({name:sn,icon:tab?tab.icon:'📌',color:'#e4e4e0',items:[]})}});
-try{localStorage.setItem(SK,JSON.stringify(data))}catch(e3){}
-}else{data=JSON.parse(JSON.stringify(defaultData))}
-}
+try{
+  data=JSON.parse(localStorage.getItem(SK));
+  if(!data||!data.sections)throw 0;
+  data.sections.forEach(function(s){s.items.forEach(function(i){if(typeof i.channel==='undefined')i.channel=''})});
+  SECTIONS.forEach(function(sn){if(!data.sections.find(function(s){return s.name===sn})){
+    var tab=TABS.find(function(t){return t.id===sn});
+    data.sections.push({name:sn,icon:tab?tab.icon:'📌',color:'#f0e4ec',items:[]})
+  }});
+}catch(e){data=JSON.parse(JSON.stringify(defaultData))}
+
 function save(){try{localStorage.setItem(SK,JSON.stringify(data))}catch(e){}}
 function getTabCategory(n){for(var i=0;i<TABS.length;i++){if(n===TABS[i].id)return TABS[i].id}return'其他事项'}
 function getFilteredSections(){return data.sections.filter(function(s){return getTabCategory(s.name)===activeTab})}
@@ -211,29 +231,30 @@ function renderItem(item,si,k){
   if(item.assignee)details.push('👤 '+item.assignee);
   if(item.email)details.push('📧 '+item.email+(item.emailDate?' ('+item.emailDate+')':''));
   var h='<div class="todo-item" draggable="true" ondragstart="onDragStart(event,'+si+','+k+')" ondragend="onDragEnd(event)" style="display:flex;align-items:flex-start;gap:12px;padding:12px 8px;border-radius:8px;cursor:grab">';
-  h+='<div onclick="toggle('+si+','+k+')" style="width:20px;height:20px;border:2px solid '+(item.done?'#b0a0a0':'#d5ccc8')+';border-radius:5px;cursor:pointer;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;background:'+(item.done?'#b0a0a0':'transparent')+'">'+(item.done?'<span style="color:#fff;font-size:12px;font-weight:700">✓</span>':'')+'</div>';
-  h+='<div style="flex:1;min-width:0"><div style="font-size:13px;line-height:1.5;'+(item.done?'text-decoration:line-through;color:#c0b5b0':'color:#6b5c5c')+'">'+item.title+'</div>';
+  h+='<div onclick="toggle('+si+','+k+')" style="width:20px;height:20px;border:2px solid '+(item.done?'#c4a0b9':'#d1c4cc')+';border-radius:5px;cursor:pointer;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;background:'+(item.done?'linear-gradient(135deg,#c4a0b9,#a8b5d6)':'transparent')+'">'+(item.done?'<span style="color:#fff;font-size:12px;font-weight:700">✓</span>':'')+'</div>';
+  h+='<div style="flex:1;min-width:0"><div style="font-size:13px;line-height:1.5;'+(item.done?'text-decoration:line-through;color:#c4b0bc':'color:#5a4a5e')+'">'+item.title+'</div>';
   h+='<div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">';
-  if(item.channel)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#ece4e0;color:#8a7a7a">🏦 '+item.channel+'</span>';
-  if(item.tag)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#e8e0dc;color:#7a6c6c">'+item.tag+'</span>';
-  h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:'+(item.priority==='urgent'?'#f0dcd8':item.priority==='pending'?'#efe6d8':'#e0e8e0')+';color:'+(item.priority==='urgent'?'#b07070':item.priority==='pending'?'#a08060':'#6a8a6a')+'">'+PL[item.priority]+'</span>';
-  if(item.assignee)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#dce8e8;color:#607878">👤 '+item.assignee+'</span>';
-  if(dl)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:'+(od?'#f0dcd8':'#e8e0ec')+';color:'+(od?'#b07070':'#887090')+'">'+dl+'</span>';
+  if(item.channel)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(196,160,185,.12);color:#9b7a8f">🏦 '+item.channel+'</span>';
+  if(item.tag)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(168,181,214,.15);color:#6b7db5">'+item.tag+'</span>';
+  h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:'+(item.priority==='urgent'?'rgba(233,150,150,.15)':item.priority==='pending'?'rgba(214,180,130,.15)':'rgba(150,200,170,.15)')+';color:'+(item.priority==='urgent'?'#c45050':item.priority==='pending'?'#b08030':'#4a9a6a')+'">'+PL[item.priority]+'</span>';
+  if(item.assignee)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(168,181,214,.12);color:#6b7db5">👤 '+item.assignee+'</span>';
+  if(dl)h+='<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:'+(od?'rgba(233,150,150,.15)':'rgba(180,160,210,.15)')+';color:'+(od?'#c45050':'#8060a0')+'">'+dl+'</span>';
   h+='</div>';
-  if(details.length)h+='<div style="font-size:11px;color:#aaa;margin-top:3px;line-height:1.6">'+details.join(' · ')+'</div>';
-  h+='</div><div style="display:flex;gap:2px;flex-shrink:0"><span onclick="editItem('+si+','+k+')" style="cursor:pointer;font-size:14px;padding:3px 5px;color:#ccc" title="编辑">✏️</span><span onclick="delItem('+si+','+k+')" style="cursor:pointer;font-size:14px;padding:3px 5px;color:#ccc" title="删除">✕</span></div></div>';
+  if(details.length)h+='<div style="font-size:11px;color:#b0a0b5;margin-top:3px;line-height:1.6">'+details.join(' · ')+'</div>';
+  h+='</div><div style="display:flex;gap:2px;flex-shrink:0"><span onclick="editItem('+si+','+k+')" style="cursor:pointer;font-size:14px;padding:3px 5px;color:#d0c0d0" title="编辑">✏️</span><span onclick="delItem('+si+','+k+')" style="cursor:pointer;font-size:14px;padding:3px 5px;color:#d0c0d0" title="删除">✕</span></div></div>';
   return h;
 }
 function render(){
-  renderNav();var sections=getFilteredSections();var c=document.getElementById('mainBody');
-  if(sections.length===0){c.innerHTML='<div style="text-align:center;padding:40px;color:#ccc">当前分类暂无待办事项</div>';return}
+  renderNav();var c=document.getElementById('mainBody');
+  var sections=getFilteredSections();
+  if(sections.length===0){c.innerHTML='<div style="text-align:center;padding:40px;color:#c4b0bc">当前分类暂无待办事项</div>';return}
   var html='';
   for(var x=0;x<sections.length;x++){
     var s=sections[x],si=data.sections.indexOf(s),ic=s.items.length,dc=0;
     for(var j=0;j<s.items.length;j++){if(s.items[j].done)dc++}
     var collapsed=collapsedSections.has(si);
     html+='<div class="section" data-si="'+si+'" ondragover="onDragOver(event,'+si+')" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'+si+')"><div class="section-header" onclick="toggleSection('+si+')"><span class="section-icon">'+s.icon+'</span><span class="section-title">'+s.name+'</span><span class="section-count">'+dc+'/'+ic+'</span><span class="section-toggle'+(collapsed?' collapsed':'')+'">▼</span></div><div class="section-body'+(collapsed?' collapsed':'')+'">';
-    if(ic===0){html+='<div style="font-size:11px;color:#d1d5db;text-align:center;padding:12px">暂无待办事项</div>'}
+    if(ic===0){html+='<div style="font-size:11px;color:#c4b0bc;text-align:center;padding:12px">暂无待办事项</div>'}
     else if(s.name==='渠道问题沟通'){
       var groups={},noChannel=[];
       s.items.forEach(function(item,k){var ch=item.channel||'';if(ch){if(!groups[ch])groups[ch]=[];groups[ch].push({item:item,k:k})}else{noChannel.push({item:item,k:k})}});
@@ -242,7 +263,7 @@ function render(){
         groups[ch].forEach(function(o){html+=renderItem(o.item,si,o.k)});
       });
       if(noChannel.length){html+='<div class="ch-group-noassign">未分配渠道</div>';noChannel.forEach(function(o){html+=renderItem(o.item,si,o.k)})}
-    } else {for(var k=0;k<s.items.length;k++){html+=renderItem(s.items[k],si,k)}}
+    }else{for(var k=0;k<s.items.length;k++){html+=renderItem(s.items[k],si,k)}}
     html+='</div></div>';
   }
   c.innerHTML=html;
@@ -252,12 +273,18 @@ function toggleSection(si){if(collapsedSections.has(si))collapsedSections.delete
 function toggle(si,ii){data.sections[si].items[ii].done=!data.sections[si].items[ii].done;save();render()}
 function delItem(si,ii){if(confirm('确定删除？')){data.sections[si].items.splice(ii,1);save();render()}}
 function editItem(si,ii){showModal(data.sections[si].items[ii])}
-function buildChannelSelect(selEl,val){
+function buildChannelSelect(val){
+  var sel=document.getElementById('inputChannel');
   var h='<option value="">不区分渠道</option>';
   CHANNEL_DATA.forEach(function(g){
-    if(g.items.length>0){h+='<optgroup label="'+g.group+'">';h+='<option value="'+g.group+'"'+(val===g.group?' selected':'')+'>'+g.group+'</option>';g.items.forEach(function(sub){h+='<option value="'+sub+'"'+(val===sub?' selected':'')+'>  '+sub+'</option>'});h+='</optgroup>'}
-    else{h+='<option value="'+g.group+'"'+(val===g.group?' selected':'')+'>'+g.group+'</option>'}
-  });selEl.innerHTML=h;
+    if(g.items.length>0){
+      h+='<optgroup label="'+g.group+'">';
+      h+='<option value="'+g.group+'"'+(val===g.group?' selected':'')+'>'+g.group+'</option>';
+      g.items.forEach(function(sub){h+='<option value="'+sub+'"'+(val===sub?' selected':'')+'>  '+sub+'</option>'});
+      h+='</optgroup>';
+    }else{h+='<option value="'+g.group+'"'+(val===g.group?' selected':'')+'>'+g.group+'</option>'}
+  });
+  sel.innerHTML=h;
 }
 function toggleChannelRow(){document.getElementById('channelRow').style.display=(document.getElementById('inputSection').value==='渠道问题沟通')?'block':'none'}
 function showModal(item){
@@ -276,13 +303,12 @@ function showModal(item){
   sel.innerHTML=SECTIONS.map(function(sn){return'<option value="'+sn+'">'+sn+'</option>'}).join('');
   if(item){var sec=data.sections.find(function(s){return s.items.indexOf(item)>=0});if(sec)sel.value=sec.name}
   else if(SECTIONS.indexOf(activeTab)>=0){sel.value=activeTab}
-  buildChannelSelect(document.getElementById('inputChannel'),item?(item.channel||''):'');
+  buildChannelSelect(item?(item.channel||''):'');
   toggleChannelRow();
   document.getElementById('modal').classList.add('show');
   document.getElementById('inputTitle').focus();
 }
 function hideModal(){document.getElementById('modal').classList.remove('show');editingItem=null}
-function onModalOverlayClick(e){if(e.target===e.currentTarget)hideModal()}
 function saveTodo(){
   var title=document.getElementById('inputTitle').value.trim();if(!title)return;
   var sn=document.getElementById('inputSection').value;
@@ -307,13 +333,13 @@ function saveTodo(){
   save();render();hideModal();
 }
 function onDragStart(e,si,ii){dragSi=si;dragIi=ii;e.dataTransfer.effectAllowed='move'}
-function onDragEnd(e){dragSi=null;dragIi=null;document.querySelectorAll('.section').forEach(function(s){s.classList.remove('drag-over')})}
+function onDragEnd(){dragSi=null;dragIi=null;document.querySelectorAll('.section').forEach(function(s){s.classList.remove('drag-over')})}
 function onDragOver(e,si){e.preventDefault();document.querySelectorAll('.section').forEach(function(s){s.classList.remove('drag-over')});e.currentTarget.classList.add('drag-over')}
 function onDragLeave(e){e.currentTarget.classList.remove('drag-over')}
 function onDrop(e,tsi){e.preventDefault();e.currentTarget.classList.remove('drag-over');if(dragSi===null||dragIi===null||dragSi===tsi)return;var item=data.sections[dragSi].items.splice(dragIi,1)[0];data.sections[tsi].items.push(item);save();render()}
 function exportExcel(){
   var rows=[];data.sections.forEach(function(s){s.items.forEach(function(item){rows.push({'分类':s.name,'渠道':item.channel||'','待办内容':item.title,'状态':item.done?'已完成':'待处理','优先级':PL[item.priority]||item.priority,'标签':item.tag||'','内部跟进人':item.assignee||'','到期日':item.due||'','最新进展':item.progress||'','关联邮件':item.email||'','发件日期':item.emailDate||''})})});
-  if(rows.length===0){alert('没有数据可导出');return}
+  if(!rows.length){alert('没有数据可导出');return}
   var ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=[{wch:16},{wch:20},{wch:40},{wch:8},{wch:8},{wch:14},{wch:12},{wch:12},{wch:30},{wch:50},{wch:14}];
   var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'待办清单');
   var d=new Date();XLSX.writeFile(wb,'待办清单_'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.xlsx');
