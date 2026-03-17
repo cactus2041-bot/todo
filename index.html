@@ -138,15 +138,20 @@ var CHANNEL_DATA=[
 ];
 var defaultData={sections:[
 {name:'渠道问题沟通',icon:'🏦',color:'#ece4e0',items:[
-{id:2,title:'SSL证书更新回复',done:false,priority:'pending',tag:'OCBC',due:'',progress:'已回复，等待确认',assignee:'',email:'Email_to_OCBC_SSL_Certificate_Update.txt',emailDate:'2026-03',channel:'OCBC'},
+{id:2,title:'SSL证书更新回复',done:false,priority:'pending',tag:'OCBC',due:'',progress:'已回复，等待确认',assignee:'',email:'Email_to_OCBC_SSL_Certificate_Update.txt / Email_Reply_to_OCBC_SSL_Certificate.txt',emailDate:'2026-03 / 2026-03-16',channel:'OCBC'},
 {id:3,title:'SSL证书更新通知',done:false,priority:'normal',tag:'DBS',due:'',progress:'',assignee:'',email:'Email_to_DBS_SSL_Certificate_Update.txt',emailDate:'2026-03',channel:'星展香港'},
+{id:16,title:'Duplicate Entries of Corp Code and VA Number.[R003]',done:false,priority:'normal',tag:'DBS',due:'',progress:'',assignee:'',channel:'星展香港'},
 {id:4,title:'CAMT052对账文件解析确认',done:false,priority:'normal',tag:'SCB Indonesia',due:'',progress:'',assignee:'',email:'Email_to_SCB_Indonesia_CAMT052_Parsing.txt',emailDate:'2026-03',channel:'渣打印尼'},
 {id:14,title:'付款失败问题',done:false,priority:'urgent',tag:'渣打香港',due:'',progress:'',assignee:'',channel:'渣打香港'},
+{id:15,title:'3月份的升级问题',done:true,priority:'normal',tag:'渣打香港',due:'',progress:'',assignee:'',channel:'渣打香港'},
 {id:5,title:'结算问题',done:false,priority:'normal',tag:'FP',due:'',progress:'',assignee:'',email:'Email_to_FP_Statement_Download_Error.txt',emailDate:'2026-03',channel:'Facility Pay'},
 {id:6,title:'付款报错问题',done:false,priority:'normal',tag:'VD',due:'',progress:'',assignee:'',channel:'Visa direct'},
+{id:8,title:'主账户加款',done:true,priority:'normal',tag:'EUBC',due:'',progress:'',assignee:'',channel:''},
 {id:9,title:'背后银行更换',done:false,priority:'normal',tag:'TM',due:'',progress:'',assignee:'',channel:'TRANSFERMATE'},
 {id:10,title:'咨询B2C申卡是否能添加字段',done:false,priority:'normal',tag:'GME',due:'',progress:'',assignee:'',channel:'GME'},
 {id:11,title:'咨询mandate事项',done:false,priority:'normal',tag:'BC',due:'',progress:'',assignee:'',channel:'Banking Circle'},
+{id:12,title:'对账单取值时间调整',done:true,priority:'normal',tag:'MoolahGo',due:'',progress:'',assignee:'',channel:'MOOLAHGO'},
+{id:13,title:'地址栏位问题',done:true,priority:'normal',tag:'MoolahGo',due:'',progress:'',assignee:'',channel:'MOOLAHGO'},
 {id:100,title:'接口限流问题跟进',done:false,priority:'urgent',tag:'MoolahGo',due:'',progress:'',assignee:'',channel:'MOOLAHGO'},
 {id:60,title:'Payout Query 404问题澄清',done:false,priority:'normal',tag:'Visa',due:'',progress:'',assignee:'',email:'Email_to_Visa_Payout_Query_404_Response.txt',emailDate:'2026-03',channel:'Visa direct'},
 {id:70,title:'接口字段需求确认',done:false,priority:'normal',tag:'TransferMate',due:'',progress:'',assignee:'',email:'Email_to_TransferMate_Integration_Questions.txt',emailDate:'2026-03',channel:'TRANSFERMATE'},
@@ -165,11 +170,27 @@ var defaultData={sections:[
 ]},
 {name:'其他事项',icon:'📌',color:'#e4e4e0',items:[]}
 ]};
+var MIGRATE_MAP={'需求文档编写':'渠道-待需求分析','上线跟进':'渠道-线上验证'};
 var data;
 try{data=JSON.parse(localStorage.getItem(SK));if(!data||!data.sections)throw 0;
 data.sections.forEach(function(s){s.items.forEach(function(i){if(typeof i.channel==='undefined')i.channel=''})});
 SECTIONS.forEach(function(sn){if(!data.sections.find(function(s){return s.name===sn})){var tab=TABS.find(function(t){return t.id===sn});data.sections.push({name:sn,icon:tab?tab.icon:'📌',color:'#e4e4e0',items:[]})}});
-}catch(e){data=JSON.parse(JSON.stringify(defaultData))}
+}catch(e){
+var oldData=null;
+try{oldData=JSON.parse(localStorage.getItem('todo_v3'));if(!oldData||!oldData.sections)oldData=null}catch(e2){}
+if(oldData){
+data={sections:[]};
+oldData.sections.forEach(function(os){
+var newName=MIGRATE_MAP[os.name]||os.name;
+if(SECTIONS.indexOf(newName)<0)newName='其他事项';
+var existing=data.sections.find(function(s){return s.name===newName});
+if(!existing){var tab=TABS.find(function(t){return t.id===newName});existing={name:newName,icon:tab?tab.icon:'📌',color:'#e4e4e0',items:[]};data.sections.push(existing)}
+os.items.forEach(function(item){if(typeof item.channel==='undefined')item.channel='';existing.items.push(item)});
+});
+SECTIONS.forEach(function(sn){if(!data.sections.find(function(s){return s.name===sn})){var tab=TABS.find(function(t){return t.id===sn});data.sections.push({name:sn,icon:tab?tab.icon:'📌',color:'#e4e4e0',items:[]})}});
+try{localStorage.setItem(SK,JSON.stringify(data))}catch(e3){}
+}else{data=JSON.parse(JSON.stringify(defaultData))}
+}
 function save(){try{localStorage.setItem(SK,JSON.stringify(data))}catch(e){}}
 function getTabCategory(n){for(var i=0;i<TABS.length;i++){if(n===TABS[i].id)return TABS[i].id}return'其他事项'}
 function getFilteredSections(){return data.sections.filter(function(s){return getTabCategory(s.name)===activeTab})}
