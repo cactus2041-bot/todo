@@ -57,6 +57,16 @@ body{font-family:'Nunito','PingFang SC','Microsoft YaHei',sans-serif;background:
 .modal input:focus,.modal select:focus{border-color:#c4a0b9;box-shadow:0 0 0 3px rgba(196,160,185,.1)}
 .ch-group-label{font-size:11px;font-weight:600;color:#9b7a8f;padding:8px 8px 2px;margin-top:4px;border-bottom:1px solid rgba(196,160,185,.15)}
 .ch-group-noassign{font-size:11px;font-weight:600;color:#b0a0b5;padding:8px 8px 2px;margin-top:4px;border-bottom:1px solid rgba(196,160,185,.1)}
+.batch-cb{width:16px;height:16px;accent-color:#c4a0b9;cursor:pointer;flex-shrink:0;margin-top:4px}
+.batch-bar{display:flex;align-items:center;gap:10px;padding:8px 16px;background:rgba(196,160,185,.12);border-radius:10px;font-size:12px;color:#6b5070;margin-bottom:12px}
+.batch-bar span{color:#9b7a8f}
+.btn-batch{padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;border:none;transition:all .2s}
+.btn-batch-del{background:rgba(233,150,150,.2);color:#c45050}
+.btn-batch-del:hover{background:rgba(233,150,150,.35)}
+.btn-batch-restore{background:rgba(150,200,170,.2);color:#4a9a6a}
+.btn-batch-restore:hover{background:rgba(150,200,170,.35)}
+.btn-batch-cancel{background:rgba(196,160,185,.15);color:#9b7a8f}
+.btn-batch-cancel:hover{background:rgba(196,160,185,.25)}
 </style>
 </head>
 <body>
@@ -76,7 +86,8 @@ body{font-family:'Nunito','PingFang SC','Microsoft YaHei',sans-serif;background:
 <div class="main">
 <div class="main-header">
 <div class="main-title" id="mainTitle">渠道问题沟通</div>
-<div class="main-actions">
+<div class="main-actions" id="mainActions">
+<button class="btn-secondary" onclick="toggleBatchMode()">☑️ 批量操作</button>
 <button class="btn-secondary" onclick="exportExcel()">📊 导出Excel</button>
 <button class="btn-add" onclick="showModal()">＋ 新建待办</button>
 </div></div>
@@ -131,9 +142,11 @@ var TABS=[
 {id:'渠道-跟进中',label:'渠道-跟进中',icon:'🔄'},
 {id:'渠道-线上验证',label:'渠道-线上验证',icon:'🚀'},
 {id:'内部问题处理',label:'内部问题处理',icon:'🔧'},
-{id:'其他事项',label:'其他事项',icon:'📌'}
+{id:'其他事项',label:'其他事项',icon:'📌'},
+{id:'已删除',label:'已删除',icon:'🗑️'}
 ];
-var SECTIONS=['渠道问题沟通','渠道-待需求分析','渠道-跟进中','渠道-线上验证','内部问题处理','其他事项'];
+var SECTIONS=['渠道问题沟通','渠道-待需求分析','渠道-跟进中','渠道-线上验证','内部问题处理','其他事项','已删除'];
+var batchMode=false,selectedItems=new Set();
 var CHANNEL_DATA=[
 {group:'星展银行 DBS',items:['星展香港','星展印尼','星展新加坡']},
 {group:'渣打银行 SCB',items:['渣打香港','渣打阿联酋','渣打中国','渣打菲律宾','渣打新加坡','渣打泰国','渣打印尼','渣打审查']},
@@ -196,37 +209,37 @@ var defaultData={sections:[
 {id:230,title:'KES虚拟卡申请报错 - Not eligible to link VA',done:false,priority:'urgent',tag:'BPN',due:'',progress:'待发邮件给BPN',assignee:'',channel:'BPN'}
 ]},
 {name:'渠道-待需求分析',icon:'📝',color:'#f0e4ec',items:[
-{id:1,title:'BPN - Create Virtual Account 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:301,title:'BPN - AddDepositSender 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:302,title:'BPN - AddWithdrawWhitelist 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:303,title:'BPN - Payout 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:304,title:'BPN - RequestWithdraw 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:305,title:'BPN - USDPayout 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:316,title:'BPN - SubVirtualAccount RFI 流程梳理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:306,title:'TransferMate - Onboarding 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:307,title:'TransferMate - AddSweepRule 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:308,title:'TransferMate - GlobalAccount 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:309,title:'Citi - France SEPA 付款需求整理',done:true,priority:'normal',reqCategory:'需求分析',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:310,title:'上海农商行 - 跨境转汇对接需求文档',done:true,priority:'normal',reqCategory:'需求分析',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:311,title:'渣打香港 - SWIFT付款中间行支持需求文档',done:false,priority:'normal',reqCategory:'需求分析',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:312,title:'网联 - 跨境收款业务对接方案',done:true,priority:'normal',reqCategory:'需求分析',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:313,title:'Verto - 接口字段映射整理',done:true,priority:'normal',reqCategory:'字段映射',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:314,title:'MSB - 接口对接需求分析',done:false,priority:'normal',reqCategory:'接口对接',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:315,title:'申卡国家规则管理需求文档',done:false,priority:'normal',reqCategory:'需求分析',planDate:'2026-04-08',requester:'',reqProgress:'',due:'2026-04-08'},
-{id:400,title:'【26Q1新渠道对接】EU-SCC - 法币',done:false,priority:'urgent',reqCategory:'业务场景',planDate:'2026-04-08',requester:'Ruiying Shi 史瑞英',reqProgress:'对LTP这一... 待处理 8天',due:'2026-04-08'},
-{id:401,title:'星展香港0001644048日间余额修正',done:false,priority:'urgent',reqCategory:'营运/结算',planDate:'2026-04-08',requester:'Lvqin Wang 王铝琴',reqProgress:'星展香港000... 待处理 1天',due:'2026-04-08'},
-{id:402,title:'【虚拟卡系统】虚拟卡修改接口升步改造',done:false,priority:'urgent',reqCategory:'业务场景',planDate:'2026-04-08',requester:'刘梅梅',reqProgress:'待处理 8天',due:'2026-04-08'},
-{id:403,title:'【渠道拓展】深圳中行出金对接',done:false,priority:'normal',reqCategory:'业务场景',planDate:'2026-04-08',requester:'陈丹',reqProgress:'深圳中行出... 待处理 14天',due:'2026-04-08'},
-{id:404,title:'【老渠道拓展】LLIC在Thunes渠道新增台湾和沙特本地下发',done:false,priority:'normal',reqCategory:'业务场景',planDate:'2026-04-08',requester:'Amber Jin 金烨沁',reqProgress:'LLIC在Thun... 待处理 15天',due:'2026-04-08'},
-{id:405,title:'【渠道拓展】上海农商行境内转汇接口对接（境内外币付款/收款功能）',done:false,priority:'normal',reqCategory:'业务场景',planDate:'2026-04-08',requester:'张晴 Elisa',reqProgress:'待处理 1个月',due:'2026-04-08'},
-{id:406,title:'【渠道调拨】查看归集单明细数据',done:false,priority:'urgent',reqCategory:'业务场景',planDate:'2026-04-08',requester:'周欢欢',reqProgress:'待处理 1个月',due:'2026-04-08'},
-{id:407,title:'【虚拟卡需求】KYC涉俄不支持申请外资银行卡',done:false,priority:'normal',reqCategory:'业务场景',planDate:'2026-04-08',requester:'丁宁',reqProgress:'基于外资银... 待处理 2个...',due:'2026-04-08'},
-{id:408,title:'【老渠道拓展】Citi Tokenization Services对接',done:false,priority:'urgent',reqCategory:'业务场景',planDate:'2026-04-08',requester:'Yuki Zhu 朱玥琦',reqProgress:'待处理 8个...',due:'2026-04-08'},
-{id:409,title:'【老渠道拓展】花旗菲律宾XBTT对接',done:false,priority:'urgent',reqCategory:'业务场景',planDate:'2026-04-08',requester:'Yuki Zhu 朱玥琦',reqProgress:'产品排期中',due:'2026-04-08'},
-{id:410,title:'【老渠道拓展】德银CAMT 052/053文件对接V8版本',done:false,priority:'urgent',reqCategory:'业务场景',planDate:'2026-04-08',requester:'刘玉婷',reqProgress:'产品设计中',due:'2026-04-08'},
-{id:411,title:'【渠道拓展】Visa Direct 全球跨境分发第二期对接',done:false,priority:'normal',reqCategory:'业务场景',planDate:'2026-04-08',requester:'Zenny OOI PEI ZHEN',reqProgress:'产品设计中',due:'2026-04-08'},
-{id:412,title:'【老渠道拓展】外籍人士申报需要上报申报人国家字段',done:false,priority:'normal',reqCategory:'业务场景',planDate:'2026-04-08',requester:'张晴 Elisa',reqProgress:'技术排期中',due:'2026-04-08'},
-{id:413,title:'【渠道拓展】花旗API申卡',done:false,priority:'normal',reqCategory:'业务场景',planDate:'2026-04-08',requester:'Yuki Zhu 朱玥琦',reqProgress:'技术设计中',due:'2026-04-08'}
+{id:1,title:'BPN - Create Virtual Account 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'',requester:'',reqProgress:''},
+{id:301,title:'BPN - AddDepositSender 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'',requester:'',reqProgress:''},
+{id:302,title:'BPN - AddWithdrawWhitelist 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'',requester:'',reqProgress:''},
+{id:303,title:'BPN - Payout 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'',requester:'',reqProgress:''},
+{id:304,title:'BPN - RequestWithdraw 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'',requester:'',reqProgress:''},
+{id:305,title:'BPN - USDPayout 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'',requester:'',reqProgress:''},
+{id:316,title:'BPN - SubVirtualAccount RFI 流程梳理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'',requester:'',reqProgress:''},
+{id:306,title:'TransferMate - Onboarding 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'',requester:'',reqProgress:''},
+{id:307,title:'TransferMate - AddSweepRule 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'',requester:'',reqProgress:''},
+{id:308,title:'TransferMate - GlobalAccount 接口字段整理',done:true,priority:'normal',reqCategory:'接口对接',planDate:'',requester:'',reqProgress:''},
+{id:309,title:'Citi - France SEPA 付款需求整理',done:true,priority:'normal',reqCategory:'需求分析',planDate:'',requester:'',reqProgress:''},
+{id:310,title:'上海农商行 - 跨境转汇对接需求文档',done:true,priority:'normal',reqCategory:'需求分析',planDate:'',requester:'',reqProgress:''},
+{id:311,title:'渣打香港 - SWIFT付款中间行支持需求文档',done:false,priority:'normal',reqCategory:'需求分析',planDate:'',requester:'',reqProgress:''},
+{id:312,title:'网联 - 跨境收款业务对接方案',done:true,priority:'normal',reqCategory:'需求分析',planDate:'',requester:'',reqProgress:''},
+{id:313,title:'Verto - 接口字段映射整理',done:true,priority:'normal',reqCategory:'字段映射',planDate:'',requester:'',reqProgress:''},
+{id:314,title:'MSB - 接口对接需求分析',done:false,priority:'normal',reqCategory:'接口对接',planDate:'',requester:'',reqProgress:''},
+{id:315,title:'申卡国家规则管理需求文档',done:false,priority:'normal',reqCategory:'需求分析',planDate:'',requester:'',reqProgress:''},
+{id:400,title:'【26Q1新渠道对接】EU-SCC - 法币',done:false,priority:'urgent',reqCategory:'业务场景',planDate:'2025-12-16',requester:'Ruiying Shi 史瑞英',reqProgress:'对LTP这一... 待处理 8天'},
+{id:401,title:'星展香港0001644048日间余额修正',done:false,priority:'urgent',reqCategory:'营运/结算',planDate:'2026-03-16',requester:'Lvqin Wang 王铝琴',reqProgress:'星展香港000... 待处理 1天'},
+{id:402,title:'【虚拟卡系统】虚拟卡修改接口升步改造',done:false,priority:'urgent',reqCategory:'业务场景',planDate:'2026-03-10',requester:'刘梅梅',reqProgress:'待处理 8天'},
+{id:403,title:'【渠道拓展】深圳中行出金对接',done:false,priority:'normal',reqCategory:'业务场景',planDate:'2026-03-03',requester:'陈丹',reqProgress:'深圳中行出... 待处理 14天'},
+{id:404,title:'【老渠道拓展】LLIC在Thunes渠道新增台湾和沙特本地下发',done:false,priority:'normal',reqCategory:'业务场景',planDate:'2026-03-03',requester:'Amber Jin 金烨沁',reqProgress:'LLIC在Thun... 待处理 15天'},
+{id:405,title:'【渠道拓展】上海农商行境内转汇接口对接（境内外币付款/收款功能）',done:false,priority:'normal',reqCategory:'业务场景',planDate:'2026-02-09',requester:'张晴 Elisa',reqProgress:'待处理 1个月'},
+{id:406,title:'【渠道调拨】查看归集单明细数据',done:false,priority:'urgent',reqCategory:'业务场景',planDate:'2026-02-06',requester:'周欢欢',reqProgress:'待处理 1个月'},
+{id:407,title:'【虚拟卡需求】KYC涉俄不支持申请外资银行卡',done:false,priority:'normal',reqCategory:'业务场景',planDate:'2026-01-26',requester:'丁宁',reqProgress:'基于外资银... 待处理 2个...'},
+{id:408,title:'【老渠道拓展】Citi Tokenization Services对接',done:false,priority:'urgent',reqCategory:'业务场景',planDate:'2025-07-31',requester:'Yuki Zhu 朱玥琦',reqProgress:'待处理 8个...'},
+{id:409,title:'【老渠道拓展】花旗菲律宾XBTT对接',done:false,priority:'urgent',reqCategory:'业务场景',planDate:'2025-12-17',requester:'Yuki Zhu 朱玥琦',reqProgress:'产品排期中'},
+{id:410,title:'【老渠道拓展】德银CAMT 052/053文件对接V8版本',done:false,priority:'urgent',reqCategory:'业务场景',planDate:'2025-11-25',requester:'刘玉婷',reqProgress:'产品设计中'},
+{id:411,title:'【渠道拓展】Visa Direct 全球跨境分发第二期对接',done:false,priority:'normal',reqCategory:'业务场景',planDate:'2024-09-11',requester:'Zenny OOI PEI ZHEN',reqProgress:'产品设计中'},
+{id:412,title:'【老渠道拓展】外籍人士申报需要上报申报人国家字段',done:false,priority:'normal',reqCategory:'业务场景',planDate:'2025-03-06',requester:'张晴 Elisa',reqProgress:'技术排期中'},
+{id:413,title:'【渠道拓展】花旗API申卡',done:false,priority:'normal',reqCategory:'业务场景',planDate:'2025-07-30',requester:'Yuki Zhu 朱玥琦',reqProgress:'技术设计中'}
 ]},
 {name:'渠道-跟进中',icon:'🔄',color:'#f0e4ec',items:[]},
 {name:'渠道-线上验证',icon:'🚀',color:'#f0e4ec',items:[]},
@@ -234,7 +247,8 @@ var defaultData={sections:[
 {id:110,title:'申卡人名字字段处理',done:false,priority:'normal',tag:'虚拟卡',due:'',progress:'',assignee:'',channel:''},
 {id:111,title:'MoolahGo名称字段拆分',done:false,priority:'normal',tag:'MoolahGo',due:'',progress:'',assignee:'',channel:'MOOLAHGO'}
 ]},
-{name:'其他事项',icon:'📌',color:'#f0e4ec',items:[]}
+{name:'其他事项',icon:'📌',color:'#f0e4ec',items:[]},
+{name:'已删除',icon:'🗑️',color:'#f0e4ec',items:[]}
 ]};
 var data;
 try{
@@ -272,6 +286,7 @@ function renderItem(item,si,k,sectionName){
   var od=!item.done&&isOverdue(isReq?item.planDate:item.due);
   var dl=dueLabel(isReq?item.planDate:item.due);
   var h='<div class="todo-item" draggable="true" ondragstart="onDragStart(event,'+si+','+k+')" ondragend="onDragEnd(event)" style="display:flex;align-items:flex-start;gap:12px;padding:12px 8px;border-radius:8px;cursor:grab">';
+  if(batchMode){var ck=selectedItems.has(si+'_'+k)?'checked':'';h+='<input type="checkbox" class="batch-cb" '+ck+' onclick="toggleSelect('+si+','+k+')">'}
   h+='<div onclick="toggle('+si+','+k+')" style="width:20px;height:20px;border:2px solid '+(item.done?'#c4a0b9':'#d1c4cc')+';border-radius:5px;cursor:pointer;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;background:'+(item.done?'linear-gradient(135deg,#c4a0b9,#a8b5d6)':'transparent')+'">'+(item.done?'<span style="color:#fff;font-size:12px;font-weight:700">✓</span>':'')+'</div>';
   h+='<div style="flex:1;min-width:0"><div style="font-size:13px;line-height:1.5;'+(item.done?'text-decoration:line-through;color:#c4b0bc':'color:#5a4a5e')+'">'+item.title+'</div>';
   h+='<div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">';
@@ -302,7 +317,9 @@ function renderItem(item,si,k,sectionName){
   }
   details=details.filter(function(d){return d});
   if(details.length)h+='<div style="font-size:11px;color:#b0a0b5;margin-top:3px;line-height:1.6">'+details.join(' · ')+'</div>';
-  h+='</div><div style="display:flex;gap:2px;flex-shrink:0"><span onclick="editItem('+si+','+k+')" style="cursor:pointer;font-size:14px;padding:3px 5px;color:#d0c0d0" title="编辑">✏️</span><span onclick="delItem('+si+','+k+')" style="cursor:pointer;font-size:14px;padding:3px 5px;color:#d0c0d0" title="删除">✕</span></div></div>';
+  h+='</div><div style="display:flex;gap:2px;flex-shrink:0">';
+  if(sectionName==='已删除'){h+='<span onclick="restoreItem('+si+','+k+')" style="cursor:pointer;font-size:14px;padding:3px 5px;color:#4a9a6a" title="恢复">↩️</span>'}
+  h+='<span onclick="editItem('+si+','+k+')" style="cursor:pointer;font-size:14px;padding:3px 5px;color:#d0c0d0" title="编辑">✏️</span><span onclick="delItem('+si+','+k+')" style="cursor:pointer;font-size:14px;padding:3px 5px;color:#d0c0d0" title="删除">✕</span></div></div>';
   return h;
 }
 function render(){
@@ -310,6 +327,14 @@ function render(){
   var sections=getFilteredSections();
   if(sections.length===0){c.innerHTML='<div style="text-align:center;padding:40px;color:#c4b0bc">当前分类暂无待办事项</div>';return}
   var html='';
+  if(batchMode){
+    var cnt=selectedItems.size;
+    var isTrash=activeTab==='已删除';
+    html+='<div class="batch-bar"><span>已选 '+cnt+' 项</span>';
+    if(isTrash){html+='<button class="btn-batch btn-batch-restore" onclick="batchRestore()">↩️ 批量恢复</button><button class="btn-batch btn-batch-del" onclick="batchDelete()">🗑️ 彻底删除</button>'}
+    else{html+='<button class="btn-batch btn-batch-del" onclick="batchDelete()">🗑️ 批量删除</button>'}
+    html+='<button class="btn-batch btn-batch-cancel" onclick="toggleBatchMode()">取消</button></div>';
+  }
   for(var x=0;x<sections.length;x++){
     var s=sections[x],si=data.sections.indexOf(s),ic=s.items.length,dc=0;
     for(var j=0;j<s.items.length;j++){if(s.items[j].done)dc++}
@@ -329,10 +354,54 @@ function render(){
   }
   c.innerHTML=html;
 }
-function switchTab(id){activeTab=id;render()}
+function switchTab(id){activeTab=id;batchMode=false;selectedItems.clear();render()}
 function toggleSection(si){if(collapsedSections.has(si))collapsedSections.delete(si);else collapsedSections.add(si);render()}
 function toggle(si,ii){data.sections[si].items[ii].done=!data.sections[si].items[ii].done;save();render()}
-function delItem(si,ii){if(confirm('确定删除？')){data.sections[si].items.splice(ii,1);save();render()}}
+function delItem(si,ii){
+var sn=data.sections[si].name;
+if(sn==='已删除'){if(confirm('彻底删除？')){data.sections[si].items.splice(ii,1);save();render()}return}
+var item=data.sections[si].items.splice(ii,1)[0];
+item._fromSection=sn;
+var trash=data.sections.find(function(s){return s.name==='已删除'});
+if(trash)trash.items.push(item);
+save();render();
+}
+function restoreItem(si,ii){
+var item=data.sections[si].items.splice(ii,1)[0];
+var target=item._fromSection||'其他事项';delete item._fromSection;
+var sec=data.sections.find(function(s){return s.name===target});
+if(!sec)sec=data.sections.find(function(s){return s.name==='其他事项'});
+if(sec)sec.items.push(item);
+save();render();
+}
+function toggleBatchMode(){batchMode=!batchMode;selectedItems.clear();render()}
+function toggleSelect(si,ii){var key=si+'_'+ii;if(selectedItems.has(key))selectedItems.delete(key);else selectedItems.add(key);render()}
+function batchDelete(){
+if(selectedItems.size===0)return;
+var isTrash=activeTab==='已删除';
+if(isTrash){if(!confirm('彻底删除 '+selectedItems.size+' 项？'))return}
+var keys=Array.from(selectedItems).map(function(k){var p=k.split('_');return{si:+p[0],ii:+p[1]}});
+keys.sort(function(a,b){return a.si===b.si?b.ii-a.ii:b.si-a.si});
+var trash=data.sections.find(function(s){return s.name==='已删除'});
+keys.forEach(function(k){
+if(isTrash){data.sections[k.si].items.splice(k.ii,1)}
+else{var item=data.sections[k.si].items.splice(k.ii,1)[0];item._fromSection=data.sections[k.si].name;if(trash)trash.items.push(item)}
+});
+selectedItems.clear();save();render();
+}
+function batchRestore(){
+if(selectedItems.size===0)return;
+var keys=Array.from(selectedItems).map(function(k){var p=k.split('_');return{si:+p[0],ii:+p[1]}});
+keys.sort(function(a,b){return a.si===b.si?b.ii-a.ii:b.si-a.si});
+keys.forEach(function(k){
+var item=data.sections[k.si].items.splice(k.ii,1)[0];
+var target=item._fromSection||'其他事项';delete item._fromSection;
+var sec=data.sections.find(function(s){return s.name===target});
+if(!sec)sec=data.sections.find(function(s){return s.name==='其他事项'});
+if(sec)sec.items.push(item);
+});
+selectedItems.clear();save();render();
+}
 function editItem(si,ii){showModal(data.sections[si].items[ii])}
 function buildChannelSelect(val){
   var sel=document.getElementById('inputChannel');
